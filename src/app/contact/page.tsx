@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Mail, Download, Phone, MapPin, Star } from "lucide-react";
-import Image from "next/image";
+import { Mail, Download, Phone, MapPin } from "lucide-react";
 
 export default function ContactPage() {
   const containerVariants = {

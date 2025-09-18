@@ -16,6 +16,7 @@ datasource db {
 model Project {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
+  icon        String
   slug        String   @unique
   description String
   tags        String[] // stored as an array in Mongo
