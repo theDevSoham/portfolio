@@ -100,7 +100,7 @@ export default function ProjectsPage() {
               <motion.div
                 key={project.id}
                 className="flex flex-col overflow-hidden rounded-2xl shadow-lg border border-slate-700 bg-slate-800/70 backdrop-blur-md
-             hover:shadow-indigo-500/20 cursor-pointer"
+             hover:shadow-indigo-500/20 cursor-pointer relative"
                 variants={itemVariants}
                 whileHover={{
                   scale: 1.05,
@@ -109,6 +109,10 @@ export default function ProjectsPage() {
                 }}
                 whileTap={{ scale: 0.98, transition: { duration: 0.2 } }}
               >
+                <a
+                  href={project.repoUrl}
+                  className="absolute w-full h-full top-0 left-0"
+                />
                 <div className="relative w-full h-64 md:h-48 lg:h-56">
                   <Image
                     src={project.imageUrl as string}
