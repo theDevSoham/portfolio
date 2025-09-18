@@ -1,16 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Navbar from "@/components/Navbar";
+import PageLoader from "@/components/PageLoader";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -24,10 +15,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className="bg-black text-slate-300 antialiased">
+        <PageLoader />
+        <header className="sticky top-0 backdrop-blur z-50 border-b lg:mb-20 mb-10">
+          <Navbar />
+        </header>
+        <main className="max-w-5xl mx-auto px-0 lg:px-6 py-12">{children}</main>
+        <footer className="border-t mt-12 py-6 text-center text-sm text-slate-500">
+          © {new Date().getFullYear()} Soham Das — Built with Next.js + Tailwind
+          + Framer Motion
+        </footer>
       </body>
     </html>
   );
