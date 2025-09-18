@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
@@ -13,6 +14,7 @@ const navLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header
@@ -34,18 +36,31 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex space-x-6">
-          {navLinks.map((link, i) => (
-            <motion.a
-              key={link.href}
-              href={link.href}
-              className="text-slate-300 hover:text-indigo-600 transition-colors"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-            >
-              {link.label}
-            </motion.a>
-          ))}
+          {navLinks.map((link, i) => {
+            const isActive = pathname === link.href;
+
+            return (
+              <motion.a
+                key={link.href}
+                href={link.href}
+                className={`relative text-slate-300 hover:text-indigo-600 transition-colors 
+                  ${isActive ? "text-indigo-500 font-semibold" : ""}`}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                {link.label}
+
+                {/* Active underline effect */}
+                {isActive && (
+                  <motion.span
+                    layoutId="underline"
+                    className="absolute left-0 -bottom-1 w-full h-[2px] bg-indigo-500 rounded-full"
+                  />
+                )}
+              </motion.a>
+            );
+          })}
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -64,21 +79,29 @@ export default function Navbar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden bg-white border-t px-6 py-4 space-y-3"
+            className="md:hidden bg-slate-400 border-t px-6 py-4 space-y-3"
           >
-            {navLinks.map((link, i) => (
-              <motion.a
-                key={link.href}
-                href={link.href}
-                className="block text-slate-700 hover:text-indigo-600 transition-colors"
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </motion.a>
-            ))}
+            {navLinks.map((link, i) => {
+              const isActive = pathname === link.href;
+
+              return (
+                <motion.a
+                  key={link.href}
+                  href={link.href}
+                  className={`block transition-colors ${
+                    isActive
+                      ? "text-indigo-600 font-semibold"
+                      : "text-slate-700 hover:text-indigo-600"
+                  }`}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </motion.a>
+              );
+            })}
           </motion.nav>
         )}
       </AnimatePresence>
