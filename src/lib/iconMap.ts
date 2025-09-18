@@ -1,4 +1,4 @@
-import { Code, FolderGit2, Globe, Rocket, Star } from "lucide-react";
+import { Code, FolderGit2, Globe, Rocket, Star, User } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const iconMap: Record<string, any> = {
@@ -7,4 +7,5 @@ export const iconMap: Record<string, any> = {
   Code,
   Star,
   FolderGit2,
+  User,
 };
