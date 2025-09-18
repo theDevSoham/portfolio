@@ -2,39 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  FolderGit2,
-  Star,
-  Rocket,
-  Code,
-  Globe,
-  Plus,
-  Edit2,
-  Trash2,
-  Check,
-  X,
-} from "lucide-react";
+import { FolderGit2, Plus, Edit2, Trash2, Check, X } from "lucide-react";
 import AdminAbout from "@/components/AdminAbout";
 import Image from "next/image";
-
-// ---------------------- Types ----------------------
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  slug: string;
-  tags: string[];
-  repoUrl?: string;
-  liveUrl?: string;
-  imageUrl?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// ---------------------- Icons ----------------------
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const iconMap: Record<string, any> = { Rocket, Globe, Code, Star, FolderGit2 };
+import { Project } from "@/lib/project";
+import { iconMap } from "@/lib/iconMap";
 
 // ---------------------- Modal ----------------------
 interface ModalProps {
