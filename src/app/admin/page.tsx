@@ -7,6 +7,7 @@ import AdminAbout from "@/components/AdminAbout";
 import Image from "next/image";
 import { Project } from "@/lib/project";
 import { iconMap } from "@/lib/iconMap";
+import AdminContact from "@/components/AdminContact";
 
 // ---------------------- Modal ----------------------
 interface ModalProps {
@@ -39,9 +40,9 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
 
 // ---------------------- Main Component ----------------------
 export default function Admin() {
-  const [activeSection, setActiveSection] = useState<"projects" | "about">(
-    "projects"
-  );
+  const [activeSection, setActiveSection] = useState<
+    "projects" | "about" | "contact"
+  >("projects");
 
   const [projects, setProjects] = useState<Project[]>([]);
 
@@ -208,7 +209,11 @@ export default function Admin() {
           >
             About
           </a>
-          <a href="#contact" className="hover:text-indigo-500">
+          <a
+            href="#"
+            onClick={() => setActiveSection("contact")}
+            className="hover:text-indigo-500"
+          >
             Contact
           </a>
         </nav>
@@ -237,13 +242,13 @@ export default function Admin() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
               {projects.map((project) => {
                 const Icon = iconMap[project.icon];
                 return (
                   <motion.div
                     key={project.id}
-                    className="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 relative"
+                    className="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 relative w-full my-6"
                     whileHover={{ scale: 1.03 }}
                   >
                     {/* Header */}
@@ -253,7 +258,10 @@ export default function Admin() {
                     </div>
 
                     {/* Description */}
-                    <p className="text-gray-300">{project.description}</p>
+                    <p className="text-gray-300">
+                      {project.description.split(" ").slice(0, 200).join(" ")}
+                      {project.description.split(" ").length > 200 && "..."}
+                    </p>
 
                     {/* Tags */}
                     {project.tags && project.tags.length > 0 && (
@@ -330,6 +338,8 @@ export default function Admin() {
       )}
 
       {activeSection === "about" && <AdminAbout />}
+
+      {activeSection === "contact" && <AdminContact />}
 
       {/* Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>

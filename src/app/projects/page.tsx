@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { FolderGit2 } from "lucide-react";
 import { iconMap } from "@/lib/iconMap"; // 👈 create a mapping of icon names to Lucide icons
 import { Project } from "@/lib/project";
+import Image from "next/image";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,8 +99,8 @@ export default function ProjectsPage() {
             return (
               <motion.div
                 key={project.id}
-                className="p-6 bg-slate-800/70 backdrop-blur-md rounded-2xl shadow-lg 
-                border border-slate-700 hover:shadow-indigo-500/20 cursor-pointer"
+                className="flex flex-col overflow-hidden rounded-2xl shadow-lg border border-slate-700 bg-slate-800/70 backdrop-blur-md
+             hover:shadow-indigo-500/20 cursor-pointer"
                 variants={itemVariants}
                 whileHover={{
                   scale: 1.05,
@@ -108,11 +109,21 @@ export default function ProjectsPage() {
                 }}
                 whileTap={{ scale: 0.98, transition: { duration: 0.2 } }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <Icon className="w-6 h-6 text-indigo-400" />
-                  <h3 className="text-xl font-semibold">{project.title}</h3>
+                <div className="relative w-full h-64 md:h-48 lg:h-56">
+                  <Image
+                    src={project.imageUrl as string}
+                    alt={project.title}
+                    fill
+                    className="object-cover rounded-t-2xl"
+                  />
                 </div>
-                <p className="text-slate-300">{project.description}</p>
+                <div className="p-6 flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-6 h-6 text-indigo-400" />
+                    <h3 className="text-xl font-semibold">{project.title}</h3>
+                  </div>
+                  <p className="text-slate-300">{project.description}</p>
+                </div>
               </motion.div>
             );
           })}
