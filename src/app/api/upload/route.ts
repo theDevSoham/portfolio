@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary, { UploadApiResponse } from "@/lib/cloudinary";
 
-export const runtime = "node"; // Add this at the top of your file
+export const runtime = "nodejs"; // Add this at the top of your file
 
 export async function POST(req: NextRequest) {
   try {
