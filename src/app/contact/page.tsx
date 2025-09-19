@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Download, Phone, MapPin } from "lucide-react";
 import { Contact, SocialLink } from "@/lib/contact";
@@ -35,6 +35,7 @@ const socialSvgs = {
 export default function ContactPage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [state, handleSubmit] = useForm("mvgbeqag");
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -70,6 +71,7 @@ export default function ContactPage() {
     return <p className="text-white text-center mt-20">Loading...</p>;
 
   if (state.succeeded) {
+    formRef.current?.reset();
     alert("Thank you for contacting me. I'll reach out shortly");
   }
 
@@ -103,6 +105,7 @@ export default function ContactPage() {
       >
         {/* Contact Form */}
         <motion.form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="flex-1 flex flex-col gap-6 bg-slate-800/70 backdrop-blur-md rounded-2xl p-4 lg:p-8 shadow-lg border border-slate-700"
           variants={itemVariants}
