@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -6,7 +7,6 @@ import { Mail, Download, Phone, MapPin } from "lucide-react";
 import { Contact, SocialLink } from "@/lib/contact";
 import { useForm, ValidationError } from "@formspree/react";
 import Image from "next/image";
-import { useGoogleReCaptcha } from "react-google-recaptcha-v3"; // 👈 import
 
 const socialSvgs = {
   Linkedin: (
@@ -37,7 +37,18 @@ export default function ContactPage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [state, handleSubmit] = useForm("mvgbeqag");
   const formRef = useRef<HTMLFormElement>(null);
-  const { executeRecaptcha } = useGoogleReCaptcha();
+
+  useEffect(() => {
+    // Inject script only once
+    if (!document.querySelector("#recaptcha-script")) {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+      script.async = true;
+      script.defer = true;
+      script.id = "recaptcha-script";
+      document.body.appendChild(script);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -78,13 +89,18 @@ export default function ContactPage() {
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
-      if (!executeRecaptcha) {
-        console.log("Recaptcha not yet available");
+      if (!(window as any).grecaptcha) {
+        console.error("reCAPTCHA not loaded yet");
         return;
       }
 
-      // Execute reCAPTCHA and get token
-      const token = await executeRecaptcha("contact_form");
+      // Execute reCAPTCHA v3
+      const token = await (window as any).grecaptcha.execute(
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+        { action: "contact_form" }
+      );
+
+      console.log("reCAPTCHA token:", token);
 
       // You can optionally append the token to your form data
       const formData = new FormData(formRef.current!);
@@ -93,7 +109,7 @@ export default function ContactPage() {
       // Submit to Formspree
       await handleSubmit(e);
     },
-    [executeRecaptcha, handleSubmit]
+    [handleSubmit]
   );
 
   if (!contact)
