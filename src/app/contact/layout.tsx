@@ -1,6 +1,10 @@
-"use client";
+import { Metadata } from "next";
+import ReCaptchaProvider from "@/components/RecaptchaProvider";
 
-import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+export const metadata: Metadata = {
+  title: "Contact | Soham Das - Portfolio",
+  description: "Get in touch with Soham Das — Full Stack Developer.",
+};
 
 export default function RootLayout({
   children,
@@ -10,11 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black text-slate-300 antialiased">
-        <GoogleReCaptchaProvider
-          reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-        >
-          {children}
-        </GoogleReCaptchaProvider>
+        <ReCaptchaProvider>{children}</ReCaptchaProvider>
       </body>
     </html>
   );
