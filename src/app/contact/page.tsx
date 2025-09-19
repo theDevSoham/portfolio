@@ -70,7 +70,7 @@ export default function ContactPage() {
     return <p className="text-white text-center mt-20">Loading...</p>;
 
   if (state.succeeded) {
-    return alert("Thank you for contacting me. I'll reach out shortly");
+    alert("Thank you for contacting me. I'll reach out shortly");
   }
 
   return (
