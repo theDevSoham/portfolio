@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "../globals.css";
 import Navbar from "@/components/Navbar";
 import PageLoader from "@/components/PageLoader";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
