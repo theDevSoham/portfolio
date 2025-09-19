@@ -176,10 +176,9 @@ export default function ProjectPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-lg leading-relaxed text-slate-300 mb-10"
-        >
-          {project.description}
-        </motion.p>
+          className="linkify text-lg leading-relaxed text-slate-300 mb-10 whitespace-pre-line "
+          dangerouslySetInnerHTML={{ __html: project.description }}
+        />
 
         {/* Tags */}
         <motion.div
