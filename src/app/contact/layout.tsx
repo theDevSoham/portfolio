@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Get in touch with Soham Das — Full Stack Developer.",
 };
 
-export default function RootLayout({
+export default function ContactLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
