@@ -1,15 +1,32 @@
 // /app/api/projects/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // import prisma
+import { prisma } from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
 
-// GET -> fetch all projects
+// Utility for Cloudinary upload
+async function uploadToCloudinary(file: File): Promise<string> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream({ folder: "portfolio" }, (err, result) => {
+        if (err || !result) reject(err);
+        else resolve(result.secure_url);
+      })
+      .end(buffer);
+  });
+}
+
+// ---------------- GET ----------------
 export async function GET() {
-  const projects = await prisma.project.findMany();
+  const projects = await prisma.project.findMany({
+    include: { images: true },
+  });
   return NextResponse.json(projects);
 }
 
-// POST -> add new project
+// ---------------- POST ----------------
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
 
@@ -17,30 +34,27 @@ export async function POST(req: NextRequest) {
   const description = formData.get("description") as string;
   const icon = formData.get("icon") as string;
   const slug = formData.get("slug") as string;
-  const tags = (formData.get("tags") as string).split(",").map((t) => t.trim());
+  const tags = (formData.get("tags") as string)
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
   const repoUrl = formData.get("repoUrl") as string;
   const liveUrl = formData.get("liveUrl") as string;
 
-  let imageUrl = formData.get("imageUrl") as string | null;
+  // Handle images (URLs + uploads)
+  const images: string[] = [];
+  const urlEntries = [...formData.keys()].filter((k) =>
+    k.startsWith("images[")
+  );
+  for (const key of urlEntries) {
+    const val = formData.get(key);
+    if (val) images.push(val.toString());
+  }
 
-  const imageFile = formData.get("imageFile") as File | null;
-
-  if (imageFile) {
-    const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadRes = await new Promise<{ secure_url: string }>(
-      (resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream({ folder: "portfolio" }, (err, result) => {
-            if (err || !result) reject(err);
-            else resolve(result as { secure_url: string });
-          })
-          .end(buffer);
-      }
-    );
-
-    imageUrl = uploadRes.secure_url;
+  const fileEntries = formData.getAll("imageFiles") as File[];
+  for (const file of fileEntries) {
+    const uploaded = await uploadToCloudinary(file);
+    images.push(uploaded);
   }
 
   const project = await prisma.project.create({
@@ -52,59 +66,71 @@ export async function POST(req: NextRequest) {
       tags,
       repoUrl,
       liveUrl,
-      imageUrl: imageUrl || "",
+      images: {
+        create: images.map((url) => ({ url })),
+      },
     },
+    include: { images: true },
   });
 
   return NextResponse.json(project);
 }
 
-// PUT -> update project
+// ---------------- PUT ----------------
 export async function PUT(req: NextRequest) {
   const formData = await req.formData();
   const id = formData.get("id") as string;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data: any = {
-    title: formData.get("title"),
-    description: formData.get("description"),
-    icon: formData.get("icon"),
-    slug: formData.get("slug"),
-    tags: (formData.get("tags") as string).split(",").map((t) => t.trim()),
-    repoUrl: formData.get("repoUrl"),
-    liveUrl: formData.get("liveUrl"),
-  };
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const icon = formData.get("icon") as string;
+  const slug = formData.get("slug") as string;
+  const tags = (formData.get("tags") as string)
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const repoUrl = formData.get("repoUrl") as string;
+  const liveUrl = formData.get("liveUrl") as string;
 
-  let imageUrl = formData.get("imageUrl") as string | null;
-  const imageFile = formData.get("imageFile") as File | null;
-
-  if (imageFile) {
-    const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const uploadRes = await new Promise<{ secure_url: string }>(
-      (resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream({ folder: "portfolio" }, (err, result) => {
-            if (err || !result) reject(err);
-            else resolve(result as { secure_url: string });
-          })
-          .end(buffer);
-      }
-    );
-    imageUrl = uploadRes.secure_url;
+  // Collect images (URLs + uploads)
+  const images: string[] = [];
+  const urlEntries = [...formData.keys()].filter((k) =>
+    k.startsWith("images[")
+  );
+  for (const key of urlEntries) {
+    const val = formData.get(key);
+    if (val) images.push(val.toString());
   }
 
-  if (imageUrl) data.imageUrl = imageUrl;
+  const fileEntries = formData.getAll("imageFiles") as File[];
+  for (const file of fileEntries) {
+    const uploaded = await uploadToCloudinary(file);
+    images.push(uploaded);
+  }
 
+  // Update project
   const project = await prisma.project.update({
     where: { id },
-    data,
+    data: {
+      title,
+      description,
+      icon,
+      slug,
+      tags,
+      repoUrl,
+      liveUrl,
+      images: {
+        deleteMany: {}, // clear old images
+        create: images.map((url) => ({ url })),
+      },
+    },
+    include: { images: true },
   });
 
   return NextResponse.json(project);
 }
 
-// DELETE -> delete project
+// ---------------- DELETE ----------------
 export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   await prisma.project.delete({ where: { id } });

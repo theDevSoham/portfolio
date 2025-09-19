@@ -62,8 +62,8 @@ export default function Admin() {
     tags: "",
     repoUrl: "",
     liveUrl: "",
-    imageUrl: "",
-    imageFile: null as File | null,
+    imageUrls: "", // comma-separated input
+    imageFiles: [] as File[], // local file uploads
   });
 
   // Fetch projects on mount
@@ -84,8 +84,8 @@ export default function Admin() {
       tags: "",
       repoUrl: "",
       liveUrl: "",
-      imageUrl: "",
-      imageFile: null,
+      imageUrls: "",
+      imageFiles: [],
     });
     setModalType("add");
     setModalOpen(true);
@@ -101,8 +101,8 @@ export default function Admin() {
       tags: project.tags.join(", "),
       repoUrl: project.repoUrl || "",
       liveUrl: project.liveUrl || "",
-      imageUrl: project.imageUrl || "",
-      imageFile: null, // user can still upload a new file
+      imageUrls: project.images?.map((img) => img.url).join(", ") || "",
+      imageFiles: [],
     });
     setModalType("edit");
     setModalOpen(true);
@@ -126,8 +126,8 @@ export default function Admin() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({ ...prev, imageFile: file }));
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setFormData((prev) => ({ ...prev, imageFiles: files }));
   };
 
   // Add/Edit Project
@@ -139,15 +139,22 @@ export default function Admin() {
     formPayload.append("description", formData.description);
     formPayload.append("icon", formData.icon);
     formPayload.append("slug", formData.slug);
-    formPayload.append("tags", formData.tags); // still comma-separated
+    formPayload.append("tags", formData.tags);
     formPayload.append("repoUrl", formData.repoUrl);
     formPayload.append("liveUrl", formData.liveUrl);
 
-    if (formData.imageFile) {
-      formPayload.append("imageFile", formData.imageFile);
-    } else if (formData.imageUrl) {
-      formPayload.append("imageUrl", formData.imageUrl);
+    // Image URLs
+    if (formData.imageUrls.trim()) {
+      formData.imageUrls
+        .split(",")
+        .map((u) => u.trim())
+        .forEach((url, i) => formPayload.append(`images[${i}]`, url)); // ✅ matches backend
     }
+
+    // Uploaded files
+    formData.imageFiles.forEach((file) =>
+      formPayload.append("imageFiles", file)
+    );
 
     let url = "/api/projects";
     let method = "POST";
@@ -285,7 +292,7 @@ export default function Admin() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-indigo-400 hover:underline block truncate max-w-xs"
-                          title={project.repoUrl} // shows full URL on hover
+                          title={project.repoUrl}
                         >
                           Repo: {project.repoUrl}
                         </a>
@@ -303,15 +310,20 @@ export default function Admin() {
                       )}
                     </div>
 
-                    {/* Image preview */}
-                    {project.imageUrl && (
-                      <Image
-                        src={project.imageUrl}
-                        alt={project.title}
-                        className="w-full h-40 object-cover rounded-md mt-2"
-                        width={500}
-                        height={500}
-                      />
+                    {/* Images preview */}
+                    {project.images && project.images.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3 mt-2">
+                        {project.images.map((img, idx) => (
+                          <Image
+                            key={idx}
+                            src={img.url}
+                            alt={`${project.title} image ${idx + 1}`}
+                            className="w-full h-40 object-cover rounded-md shadow"
+                            width={500}
+                            height={500}
+                          />
+                        ))}
+                      </div>
                     )}
 
                     {/* Action Buttons */}
@@ -338,7 +350,6 @@ export default function Admin() {
       )}
 
       {activeSection === "about" && <AdminAbout />}
-
       {activeSection === "contact" && <AdminContact />}
 
       {/* Modal */}
@@ -419,20 +430,26 @@ export default function Admin() {
                 onChange={handleChange}
                 className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
               />
-              <input
-                type="text"
-                name="imageUrl"
-                placeholder="Image URL (optional if uploading file)"
-                value={formData.imageUrl}
+
+              {/* Image URLs */}
+              <textarea
+                name="imageUrls"
+                placeholder="Image URLs (comma separated, optional if uploading files)"
+                value={formData.imageUrls}
                 onChange={handleChange}
                 className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
+                rows={3}
               />
+
+              {/* Multiple File Upload */}
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileChange}
                 className="w-full text-gray-300"
               />
+
               <select
                 name="icon"
                 value={formData.icon}

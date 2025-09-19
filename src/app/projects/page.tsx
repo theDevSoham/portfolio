@@ -115,7 +115,7 @@ export default function ProjectsPage() {
                 />
                 <div className="relative w-full h-64 md:h-48 lg:h-56">
                   <Image
-                    src={project.imageUrl as string}
+                    src={project.images[0].url as string}
                     alt={project.title}
                     fill
                     className="object-cover rounded-t-2xl"

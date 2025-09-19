@@ -12,6 +12,7 @@ export async function GET(
 
     const project = await prisma.project.findUnique({
       where: { slug },
+      include: { images: true }, // 👈 include related images
     });
 
     if (!project) {

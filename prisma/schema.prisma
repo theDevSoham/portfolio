@@ -14,17 +14,25 @@ datasource db {
 }
 
 model Project {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   icon        String
-  slug        String   @unique
+  slug        String         @unique
   description String
   tags        String[] // stored as an array in Mongo
   repoUrl     String?
   liveUrl     String?
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  images      ProjectImage[] // relation to images
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model ProjectImage {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  url       String // Cloudinary or static file URL
+  alt       String? // optional alt text for accessibility
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String  @db.ObjectId
 }
 
 model About {
