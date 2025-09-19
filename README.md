@@ -1,7 +1,3 @@
-Perfect! Here's the **enhanced README** with a **Demo & Screenshots** section added. You can replace the placeholder image URLs with your actual screenshots and GIFs later.
-
----
-
 # Portfolio Website
 
 A modern, responsive portfolio website built with **Next.js 14 (App Router)**, **TypeScript**, **Framer Motion**, and **Cloudinary** for showcasing projects. Designed for developers to present projects, blogs, and personal skills in a visually engaging way.
