@@ -109,16 +109,19 @@ export default function ContactPage() {
         >
           <input
             type="text"
+            name="user_name"
             placeholder="Your Name"
             className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
           <input
             type="email"
+            name="user_email"
             placeholder="Your Email"
             className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
           <textarea
             placeholder="Your Message"
+            name="user_message"
             rows={5}
             className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
