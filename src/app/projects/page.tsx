@@ -110,7 +110,7 @@ export default function ProjectsPage() {
                 whileTap={{ scale: 0.98, transition: { duration: 0.2 } }}
               >
                 <a
-                  href={project.repoUrl}
+                  href={`/projects/${project.slug}`}
                   className="absolute w-full h-full top-0 left-0"
                 />
                 <div className="relative w-full h-64 md:h-48 lg:h-56">
