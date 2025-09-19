@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Download, Phone, MapPin } from "lucide-react";
 import { Contact, SocialLink } from "@/lib/contact";
 import { useForm, ValidationError } from "@formspree/react";
 import Image from "next/image";
+import {
+  GoogleReCaptchaProvider,
+  useGoogleReCaptcha,
+} from "react-google-recaptcha-v3"; // 👈 import
 
 const socialSvgs = {
   Linkedin: (
@@ -36,6 +40,7 @@ export default function ContactPage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [state, handleSubmit] = useForm("mvgbeqag");
   const formRef = useRef<HTMLFormElement>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -67,166 +72,194 @@ export default function ContactPage() {
     },
   };
 
-  if (!contact)
-    return <p className="text-white text-center mt-20">Loading...</p>;
-
   if (state.succeeded) {
     formRef.current?.reset();
     alert("Thank you for contacting me. I'll reach out shortly");
   }
 
+  const onSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      if (!executeRecaptcha) {
+        console.log("Recaptcha not yet available");
+        return;
+      }
+
+      // Execute reCAPTCHA and get token
+      const token = await executeRecaptcha("contact_form");
+
+      // You can optionally append the token to your form data
+      const formData = new FormData(formRef.current!);
+      formData.append("g-recaptcha-response", token);
+
+      // Submit to Formspree
+      await handleSubmit(e);
+    },
+    [executeRecaptcha, handleSubmit]
+  );
+
+  if (!contact)
+    return <p className="text-white text-center mt-20">Loading...</p>;
+
   return (
-    <section className="min-h-screen bg-transparent text-white py-20 px-6">
-      {/* Heading */}
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: -40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        <Mail className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
-        <h1 className="text-4xl md:text-5xl font-bold">
-          Contact <span className="text-indigo-400">Me</span>
-        </h1>
-        <p className="mt-4 text-slate-300 max-w-2xl mx-auto">
-          Have a project in mind or want to collaborate? Get in touch or
-          download my resume.
-        </p>
-      </motion.div>
-
-      {/* Contact Form + Image */}
-      <motion.div
-        className="flex flex-col md:flex-row items-center gap-10 max-w-6xl mx-auto mb-20"
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        variants={containerVariants}
-      >
-        {/* Contact Form */}
-        <motion.form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          className="flex-1 flex flex-col gap-6 bg-slate-800/70 backdrop-blur-md rounded-2xl p-4 lg:p-8 shadow-lg border border-slate-700"
-          variants={itemVariants}
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+      scriptProps={{ async: true, defer: true }}
+    >
+      <section className="min-h-screen bg-transparent text-white py-20 px-6">
+        {/* Heading */}
+        <motion.div
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: -40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <input
-            type="text"
-            name="user_name"
-            placeholder="Your Name"
-            className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-          <input
-            type="email"
-            name="user_email"
-            placeholder="Your Email"
-            className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-          <textarea
-            placeholder="Your Message"
-            name="user_message"
-            rows={5}
-            className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-          <button
-            type="submit"
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 rounded-xl font-medium hover:bg-indigo-700 transition"
+          <Mail className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
+          <h1 className="text-4xl md:text-5xl font-bold">
+            Contact <span className="text-indigo-400">Me</span>
+          </h1>
+          <p className="mt-4 text-slate-300 max-w-2xl mx-auto">
+            Have a project in mind or want to collaborate? Get in touch or
+            download my resume.
+          </p>
+        </motion.div>
+
+        {/* Contact Form + Image */}
+        <motion.div
+          className="flex flex-col md:flex-row items-center gap-10 max-w-6xl mx-auto mb-20"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          variants={containerVariants}
+        >
+          {/* Contact Form */}
+          <motion.form
+            ref={formRef}
+            onSubmit={onSubmit}
+            className="flex-1 flex flex-col gap-6 bg-slate-800/70 backdrop-blur-md rounded-2xl p-4 lg:p-8 shadow-lg border border-slate-700"
+            variants={itemVariants}
           >
-            Send Message <Mail size={18} />
-          </button>
-          <ValidationError errors={state.errors} />
-          {contact.resumeUrl && (
-            <a
-              href={contact.resumeUrl}
-              download
-              className="flex items-center justify-center gap-2 px-6 py-3 border border-indigo-400 rounded-xl font-medium hover:bg-indigo-600 hover:text-white transition"
+            <input
+              type="text"
+              name="user_name"
+              placeholder="Your Name"
+              className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            <input
+              type="email"
+              name="user_email"
+              placeholder="Your Email"
+              className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            <textarea
+              placeholder="Your Message"
+              name="user_message"
+              rows={5}
+              className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+
+            <button
+              type="submit"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 rounded-xl font-medium hover:bg-indigo-700 transition"
             >
-              Download Resume <Download size={18} />
-            </a>
-          )}
-        </motion.form>
-
-        {/* Decorative Image */}
-        <motion.div
-          className="flex-1"
-          variants={itemVariants}
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
-          {contact.mediaUrl?.endsWith(".mp4") ? (
-            <video
-              src={contact.mediaUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover rounded-2xl shadow-2xl"
-            />
-          ) : (
-            <Image
-              src={contact.mediaUrl as string}
-              alt="Decorative media"
-              className="w-full h-full object-cover rounded-2xl shadow-2xl"
-              width={500}
-              height={500}
-            />
-          )}
-        </motion.div>
-      </motion.div>
-
-      {/* Contact Info */}
-      <motion.div
-        className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 text-center"
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        variants={containerVariants}
-      >
-        <motion.a
-          className="flex flex-col items-center gap-2 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700"
-          variants={itemVariants}
-          href={`tel:${contact.phone}`}
-        >
-          <Phone className="w-6 h-6 text-indigo-400" />
-          <p>{contact.phone}</p>
-        </motion.a>
-        <motion.a
-          className="flex flex-col items-center gap-2 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700"
-          variants={itemVariants}
-          href={`mailto:${contact.email}`}
-        >
-          <Mail className="w-6 h-6 text-indigo-400" />
-          <p>{contact.email}</p>
-        </motion.a>
-        <motion.address
-          className="flex flex-col items-center gap-2 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700 cursor-pointer"
-          variants={itemVariants}
-        >
-          <MapPin className="w-6 h-6 text-indigo-400" />
-          <p>{contact.location}</p>
-        </motion.address>
-
-        {/* Social Links */}
-        <motion.div
-          className="flex flex-col items-center gap-3 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700"
-          variants={itemVariants}
-        >
-          <p className="font-semibold text-indigo-400">Find me online</p>
-          <div className="flex gap-4">
-            {contact.socials.map((s: SocialLink) => (
+              Send Message <Mail size={18} />
+            </button>
+            <ValidationError errors={state.errors} />
+            {contact.resumeUrl && (
               <a
-                key={s.id}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-indigo-400 transition"
+                href={contact.resumeUrl}
+                download
+                className="flex items-center justify-center gap-2 px-6 py-3 border border-indigo-400 rounded-xl font-medium hover:bg-indigo-600 hover:text-white transition"
               >
-                {socialSvgs[s.platform as keyof typeof socialSvgs]}
+                Download Resume <Download size={18} />
               </a>
-            ))}
-          </div>
+            )}
+          </motion.form>
+
+          {/* Decorative Image */}
+          <motion.div
+            className="flex-1"
+            variants={itemVariants}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            {contact.mediaUrl?.endsWith(".mp4") ? (
+              <video
+                src={contact.mediaUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover rounded-2xl shadow-2xl"
+              />
+            ) : (
+              <Image
+                src={contact.mediaUrl as string}
+                alt="Decorative media"
+                className="w-full h-full object-cover rounded-2xl shadow-2xl"
+                width={500}
+                height={500}
+              />
+            )}
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </section>
+
+        {/* Contact Info */}
+        <motion.div
+          className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 text-center"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          variants={containerVariants}
+        >
+          <motion.a
+            className="flex flex-col items-center gap-2 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700"
+            variants={itemVariants}
+            href={`tel:${contact.phone}`}
+          >
+            <Phone className="w-6 h-6 text-indigo-400" />
+            <p>{contact.phone}</p>
+          </motion.a>
+          <motion.a
+            className="flex flex-col items-center gap-2 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700"
+            variants={itemVariants}
+            href={`mailto:${contact.email}`}
+          >
+            <Mail className="w-6 h-6 text-indigo-400" />
+            <p>{contact.email}</p>
+          </motion.a>
+          <motion.address
+            className="flex flex-col items-center gap-2 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700 cursor-pointer"
+            variants={itemVariants}
+          >
+            <MapPin className="w-6 h-6 text-indigo-400" />
+            <p>{contact.location}</p>
+          </motion.address>
+
+          {/* Social Links */}
+          <motion.div
+            className="flex flex-col items-center gap-3 p-6 bg-slate-800/70 rounded-2xl shadow-md border border-slate-700"
+            variants={itemVariants}
+          >
+            <p className="font-semibold text-indigo-400">Find me online</p>
+            <div className="flex gap-4">
+              {contact.socials.map((s: SocialLink) => (
+                <a
+                  key={s.id}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-indigo-400 transition"
+                >
+                  {socialSvgs[s.platform as keyof typeof socialSvgs]}
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      </section>
+    </GoogleReCaptchaProvider>
   );
 }
