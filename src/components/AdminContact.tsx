@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -86,13 +85,18 @@ export default function AdminContact() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await res.json();
-    setContact((prev) => prev && { ...prev, mediaUrl: data.url });
+      const data = await res.json();
+      setContact((prev) => prev && { ...prev, mediaUrl: data.url });
+    } catch (error) {
+      console.log(error);
+      alert("Error uploading file");
+    }
   };
 
   const openSocialModal = (item: SocialLink | null = null) => {
