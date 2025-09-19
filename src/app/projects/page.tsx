@@ -7,22 +7,22 @@ import { iconMap } from "@/lib/iconMap"; // 👈 create a mapping of icon names 
 import { Project } from "@/lib/project";
 import Image from "next/image";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.25, delayChildren: 0.3 },
-  },
-};
+// const containerVariants = {
+//   hidden: { opacity: 0 },
+//   show: {
+//     opacity: 1,
+//     transition: { staggerChildren: 0.25, delayChildren: 0.3 },
+//   },
+// };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 40 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 120, damping: 14 },
-  },
-};
+// const itemVariants = {
+//   hidden: { opacity: 0, y: 40 },
+//   show: {
+//     opacity: 1,
+//     y: 0,
+//     transition: { type: "spring" as const, stiffness: 120, damping: 14 },
+//   },
+// };
 
 function truncateWords(text: string, wordLimit: number): string {
   if (!text) return "";
@@ -95,14 +95,29 @@ export default function ProjectsPage() {
       {/* Project List */}
       {!loading && projects.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Render first 3 projects immediately */}
-          {projects.slice(0, 3).map((project) => {
+          {projects.map((project, index) => {
             const Icon = iconMap[project.icon] || FolderGit2;
+
             return (
-              <div
+              <motion.div
                 key={project.id}
                 className="flex flex-col overflow-hidden rounded-2xl shadow-lg border border-slate-700 bg-slate-800/70 backdrop-blur-md
-          cursor-pointer relative"
+            hover:shadow-indigo-500/20 cursor-pointer relative"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 120,
+                  damping: 14,
+                  delay: index * 0.15, // stagger by index
+                }}
+                whileHover={{
+                  scale: 1.05,
+                  rotate: -1,
+                  transition: { type: "spring", stiffness: 200, damping: 15 },
+                }}
+                whileTap={{ scale: 0.98, transition: { duration: 0.2 } }}
               >
                 <a
                   href={`/projects/${project.slug}`}
@@ -122,61 +137,12 @@ export default function ProjectsPage() {
                     <h3 className="text-xl font-semibold">{project.title}</h3>
                   </div>
                   <p className="text-slate-300">
-                    {truncateWords(project.description, 100)}
+                    {truncateWords(project.description, 20)}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-
-          {/* Animate remaining projects */}
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false, amount: 0.2 }}
-          >
-            {projects.slice(3).map((project) => {
-              const Icon = iconMap[project.icon] || FolderGit2;
-              return (
-                <motion.div
-                  key={project.id}
-                  className="flex flex-col overflow-hidden rounded-2xl shadow-lg border border-slate-700 bg-slate-800/70 backdrop-blur-md
-             hover:shadow-indigo-500/20 cursor-pointer relative"
-                  variants={itemVariants}
-                  whileHover={{
-                    scale: 1.05,
-                    rotate: -1,
-                    transition: { type: "spring", stiffness: 200, damping: 15 },
-                  }}
-                  whileTap={{ scale: 0.98, transition: { duration: 0.2 } }}
-                >
-                  <a
-                    href={`/projects/${project.slug}`}
-                    className="absolute w-full h-full top-0 left-0"
-                  />
-                  <div className="relative w-full h-64 md:h-48 lg:h-56">
-                    <Image
-                      src={project.images[0].url as string}
-                      alt={project.title}
-                      fill
-                      className="object-cover rounded-t-2xl"
-                    />
-                  </div>
-                  <div className="p-6 flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-6 h-6 text-indigo-400" />
-                      <h3 className="text-xl font-semibold">{project.title}</h3>
-                    </div>
-                    <p className="text-slate-300">
-                      {truncateWords(project.description, 100)}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
         </div>
       )}
     </section>
