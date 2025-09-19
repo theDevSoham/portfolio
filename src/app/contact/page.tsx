@@ -88,6 +88,7 @@ export default function ContactPage() {
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      e.persist?.(); // 👈 keep the synthetic event alive
 
       if (!(window as any).grecaptcha) {
         console.error("reCAPTCHA not loaded yet");
@@ -102,9 +103,12 @@ export default function ContactPage() {
 
       console.log("reCAPTCHA token:", token);
 
-      // You can optionally append the token to your form data
-      const formData = new FormData(formRef.current!);
-      formData.append("g-recaptcha-response", token);
+      // Add token to hidden input so Formspree sees it
+      const hidden = document.createElement("input");
+      hidden.type = "hidden";
+      hidden.name = "g-recaptcha-response";
+      hidden.value = token;
+      e.currentTarget.appendChild(hidden);
 
       // Submit to Formspree
       await handleSubmit(e);
