@@ -78,7 +78,7 @@ export default function ProjectPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full h-72 md:h-96 object-cover rounded-2xl shadow-2xl"
+              className="w-full h-72 md:h-96 object-contain rounded-2xl shadow-2xl"
             />
           )}
           <motion.h1
@@ -119,7 +119,7 @@ export default function ProjectPage() {
                 alt={img.alt || `${project.title} image ${idx + 1}`}
                 onClick={() => setCurrentImage(idx)}
                 whileHover={{ scale: 1.05 }}
-                className={`w-24 h-20 object-cover rounded-lg cursor-pointer border-2 transition ${
+                className={`w-24 h-20 object-contain rounded-lg cursor-pointer border-2 transition ${
                   idx === currentImage
                     ? "border-indigo-400"
                     : "border-transparent"
