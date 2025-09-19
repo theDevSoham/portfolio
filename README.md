@@ -66,13 +66,14 @@ A modern, responsive portfolio website built with **Next.js 14 (App Router)**, *
 
 ### Home / Projects Listing
 
-![Home Page](https://via.placeholder.com/800x400.png?text=Home+Page+Screenshot)
+<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 34 52 PM" src="https://github.com/user-attachments/assets/9ab00156-9a2c-4453-a191-56b204491098" />
+<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 36 17 PM" src="https://github.com/user-attachments/assets/08bc8f39-7105-4791-a996-a4b323b0a95f" />
 
 ---
 
 ### Individual Project Page
 
-![Project Page](https://via.placeholder.com/800x400.png?text=Project+Page+Screenshot)
+<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 37 01 PM" src="https://github.com/user-attachments/assets/99212aa9-9f86-485e-ab39-aa2628a7e278" />
 
 * Image carousel with previous/next buttons
 * Animated transitions using Framer Motion
@@ -82,7 +83,8 @@ A modern, responsive portfolio website built with **Next.js 14 (App Router)**, *
 
 ### Admin Panel
 
-![Admin Panel](https://via.placeholder.com/800x400.png?text=Admin+Panel+Screenshot)
+<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 37 41 PM" src="https://github.com/user-attachments/assets/32d5f721-998e-44c0-ad99-7fd38ba0bfda" />
+
 
 * Secure login using email/password
 * Upload project images
@@ -92,7 +94,7 @@ A modern, responsive portfolio website built with **Next.js 14 (App Router)**, *
 
 ### Image Upload Example
 
-![Upload Demo](https://via.placeholder.com/800x400.png?text=Image+Upload+Demo)
+<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 38 47 PM" src="https://github.com/user-attachments/assets/06b73c6f-9583-4526-8284-7e03553611a9" />
 
 * Upload directly to Cloudinary
 * Serverless API handles file storage
