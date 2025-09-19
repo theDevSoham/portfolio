@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import ReCaptchaProvider from "@/components/RecaptchaProvider";
+import ReCaptchaProvider from "@/components/ReCaptchaProvider";
 
 export const metadata: Metadata = {
   title: "Contact | Soham Das - Portfolio",
