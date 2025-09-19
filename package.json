@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@formspree/react": "^3.0.0",
     "@prisma/client": "^6.16.2",
     "axios": "^1.12.2",
     "cloudinary": "^2.7.0",

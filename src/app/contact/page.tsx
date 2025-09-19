@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Download, Phone, MapPin } from "lucide-react";
 import { Contact, SocialLink } from "@/lib/contact";
+import { useForm, ValidationError } from "@formspree/react";
 import Image from "next/image";
 
 const socialSvgs = {
@@ -33,6 +34,7 @@ const socialSvgs = {
 
 export default function ContactPage() {
   const [contact, setContact] = useState<Contact | null>(null);
+  const [state, handleSubmit] = useForm("YOUR_FORM_ID");
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -67,6 +69,10 @@ export default function ContactPage() {
   if (!contact)
     return <p className="text-white text-center mt-20">Loading...</p>;
 
+  if (state.succeeded) {
+    return alert("Thank you for contacting me. I'll reach out shortly");
+  }
+
   return (
     <section className="min-h-screen bg-transparent text-white py-20 px-6">
       {/* Heading */}
@@ -97,6 +103,7 @@ export default function ContactPage() {
       >
         {/* Contact Form */}
         <motion.form
+          onSubmit={handleSubmit}
           className="flex-1 flex flex-col gap-6 bg-slate-800/70 backdrop-blur-md rounded-2xl p-4 lg:p-8 shadow-lg border border-slate-700"
           variants={itemVariants}
         >
@@ -121,6 +128,7 @@ export default function ContactPage() {
           >
             Send Message <Mail size={18} />
           </button>
+          <ValidationError errors={state.errors} />
           {contact.resumeUrl && (
             <a
               href={contact.resumeUrl}
