@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Project } from "@/lib/project";
 import { iconMap } from "@/lib/iconMap";
 import AdminContact from "@/components/AdminContact";
+import { signOut } from "next-auth/react";
 
 // ---------------------- Modal ----------------------
 interface ModalProps {
@@ -229,6 +230,14 @@ export default function Admin() {
           className="flex items-center gap-2 px-4 py-2 bg-indigo-400 rounded-md hover:bg-indigo-500 transition mt-4"
         >
           <Plus size={18} /> Add Project
+        </button>
+        <button
+          onClick={async () => {
+            await signOut();
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-red-400 rounded-md hover:bg-red-500 transition mt-4"
+        >
+          <Plus size={18} /> Logout
         </button>
       </aside>
 
