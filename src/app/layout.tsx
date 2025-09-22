@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Soham Das - Portfolio",
     description:
-      "Full Stack Developer specializing in building scalable applications with Next.js, React, and Node.js.",
+      "Full Stack Developer specializing in building scalable applications with Next.js, React, Node.js., React Native + Expo and modern web infrastructure",
     url: "https://yourdomain.com",
     siteName: "Soham.dev",
     images: [
