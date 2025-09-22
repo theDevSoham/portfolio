@@ -6,7 +6,7 @@ import PageLoader from "@/components/PageLoader";
 export const metadata: Metadata = {
   title: "Soham Das - Portfolio",
   description:
-    "Explore the portfolio of Soham Das — Full Stack Developer with expertise in Next.js, React, Node.js, and modern web technologies. Building scalable apps, creative UI, and impactful digital products.",
+    "Explore the portfolio of Soham Das — Full Stack Developer with expertise in Next.js, React, Node.js React Native, and modern web technologies. Building scalable apps, creative UI, and impactful digital products.",
   keywords: [
     "Soham Das",
     "Portfolio",
