@@ -121,7 +121,7 @@ export default function ProjectsPage() {
               >
                 <a
                   href={`/projects/${project.slug}`}
-                  className="absolute w-full h-full top-0 left-0"
+                  className="absolute w-full h-full top-0 left-0 z-10"
                 />
                 <div className="relative w-full h-64 md:h-48 lg:h-56">
                   <Image
