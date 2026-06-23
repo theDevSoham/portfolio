@@ -10,9 +10,6 @@ export default function ContactLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body className="bg-black text-slate-300 antialiased">{children}</body>
-    </html>
-  );
+  // Only contributes route-segment metadata; the document shell lives in the root layout.
+  return <>{children}</>;
 }
