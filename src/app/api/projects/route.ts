@@ -2,8 +2,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
+import { isAdmin, unauthorized } from "@/lib/auth";
+import { projectInputSchema, validateUploadFile, badRequest } from "@/lib/validation";
 
-// Utility for Cloudinary upload
+// Utility for Cloudinary upload (validates type/size before sending)
 async function uploadToCloudinary(file: File): Promise<string> {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
@@ -18,6 +20,46 @@ async function uploadToCloudinary(file: File): Promise<string> {
   });
 }
 
+/** Parse the multipart form into a plain object and collect/validate image files. */
+async function readProjectForm(req: NextRequest) {
+  const formData = await req.formData();
+
+  const tagsRaw = (formData.get("tags") as string) ?? "";
+  const images: string[] = [];
+
+  // Existing image URLs passed back from the client
+  for (const key of [...formData.keys()].filter((k) => k.startsWith("images["))) {
+    const val = formData.get(key);
+    if (val) images.push(val.toString());
+  }
+
+  // New uploads — validate each before hitting Cloudinary
+  const fileEntries = (formData.getAll("imageFiles") as File[]).filter(
+    (f) => f && typeof f === "object" && f.size > 0
+  );
+  for (const file of fileEntries) {
+    const err = validateUploadFile(file);
+    if (err) return { error: err as string };
+  }
+  for (const file of fileEntries) {
+    images.push(await uploadToCloudinary(file));
+  }
+
+  const input = {
+    id: (formData.get("id") as string) || undefined,
+    title: (formData.get("title") as string) ?? "",
+    description: (formData.get("description") as string) ?? "",
+    icon: (formData.get("icon") as string) ?? "",
+    slug: (formData.get("slug") as string) ?? "",
+    tags: tagsRaw.split(",").map((t) => t.trim()).filter(Boolean),
+    repoUrl: (formData.get("repoUrl") as string) ?? "",
+    liveUrl: (formData.get("liveUrl") as string) ?? "",
+    images,
+  };
+
+  return { input };
+}
+
 // ---------------- GET ----------------
 export async function GET() {
   const projects = await prisma.project.findMany({
@@ -28,47 +70,21 @@ export async function GET() {
 
 // ---------------- POST ----------------
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
+  if (!(await isAdmin())) return unauthorized();
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const icon = formData.get("icon") as string;
-  const slug = formData.get("slug") as string;
-  const tags = (formData.get("tags") as string)
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-  const repoUrl = formData.get("repoUrl") as string;
-  const liveUrl = formData.get("liveUrl") as string;
+  const form = await readProjectForm(req);
+  if ("error" in form)
+    return NextResponse.json({ error: form.error }, { status: 400 });
 
-  // Handle images (URLs + uploads)
-  const images: string[] = [];
-  const urlEntries = [...formData.keys()].filter((k) =>
-    k.startsWith("images[")
-  );
-  for (const key of urlEntries) {
-    const val = formData.get(key);
-    if (val) images.push(val.toString());
-  }
-
-  const fileEntries = formData.getAll("imageFiles") as File[];
-  for (const file of fileEntries) {
-    const uploaded = await uploadToCloudinary(file);
-    images.push(uploaded);
-  }
+  const parsed = projectInputSchema.safeParse(form.input);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { images, ...rest } = parsed.data;
+  delete rest.id;
 
   const project = await prisma.project.create({
     data: {
-      title,
-      description,
-      icon,
-      slug,
-      tags,
-      repoUrl,
-      liveUrl,
-      images: {
-        create: images.map((url) => ({ url })),
-      },
+      ...rest,
+      images: { create: images.map((url) => ({ url })) },
     },
     include: { images: true },
   });
@@ -78,47 +94,22 @@ export async function POST(req: NextRequest) {
 
 // ---------------- PUT ----------------
 export async function PUT(req: NextRequest) {
-  const formData = await req.formData();
-  const id = formData.get("id") as string;
+  if (!(await isAdmin())) return unauthorized();
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const icon = formData.get("icon") as string;
-  const slug = formData.get("slug") as string;
-  const tags = (formData.get("tags") as string)
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-  const repoUrl = formData.get("repoUrl") as string;
-  const liveUrl = formData.get("liveUrl") as string;
+  const form = await readProjectForm(req);
+  if ("error" in form)
+    return NextResponse.json({ error: form.error }, { status: 400 });
 
-  // Collect images (URLs + uploads)
-  const images: string[] = [];
-  const urlEntries = [...formData.keys()].filter((k) =>
-    k.startsWith("images[")
-  );
-  for (const key of urlEntries) {
-    const val = formData.get(key);
-    if (val) images.push(val.toString());
-  }
+  const parsed = projectInputSchema.safeParse(form.input);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { images, id, ...data } = parsed.data;
+  if (!id)
+    return NextResponse.json({ error: "Project id required" }, { status: 400 });
 
-  const fileEntries = formData.getAll("imageFiles") as File[];
-  for (const file of fileEntries) {
-    const uploaded = await uploadToCloudinary(file);
-    images.push(uploaded);
-  }
-
-  // Update project
   const project = await prisma.project.update({
     where: { id },
     data: {
-      title,
-      description,
-      icon,
-      slug,
-      tags,
-      repoUrl,
-      liveUrl,
+      ...data,
       images: {
         deleteMany: {}, // clear old images
         create: images.map((url) => ({ url })),
@@ -132,7 +123,13 @@ export async function PUT(req: NextRequest) {
 
 // ---------------- DELETE ----------------
 export async function DELETE(req: NextRequest) {
-  const { id } = await req.json();
+  if (!(await isAdmin())) return unauthorized();
+
+  const body = await req.json();
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!id)
+    return NextResponse.json({ error: "Project id required" }, { status: 400 });
+
   await prisma.project.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

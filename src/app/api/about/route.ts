@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdmin, unauthorized } from "@/lib/auth";
+import {
+  aboutCreateSchema,
+  aboutUpdateSchema,
+  aboutDeleteSchema,
+  badRequest,
+} from "@/lib/validation";
 
 async function upsertNested<T extends { id?: string }>(
   items: T[],
@@ -49,8 +56,11 @@ export async function GET() {
 // ✅ POST -> create About info with nested relations
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    console.log(data);
+    if (!(await isAdmin())) return unauthorized();
+
+    const parsed = aboutCreateSchema.safeParse(await req.json());
+    if (!parsed.success) return badRequest(parsed.error);
+    const data = parsed.data;
 
     const about = await prisma.about.create({
       data: {
@@ -58,10 +68,10 @@ export async function POST(req: NextRequest) {
         headline: data.headline,
         bio: data.bio,
         avatarUrl: data.avatarUrl,
-        education: { create: data.education || [] },
-        experiences: { create: data.experiences || [] },
-        skills: { create: data.skills || [] },
-        achievements: { create: data.achievements || [] },
+        education: { create: data.education },
+        experiences: { create: data.experiences },
+        skills: { create: data.skills },
+        achievements: { create: data.achievements },
       },
       include: {
         education: true,
@@ -84,6 +94,10 @@ export async function POST(req: NextRequest) {
 // ✅ PUT -> update About info with nested upserts
 export async function PUT(req: NextRequest) {
   try {
+    if (!(await isAdmin())) return unauthorized();
+
+    const parsed = aboutUpdateSchema.safeParse(await req.json());
+    if (!parsed.success) return badRequest(parsed.error);
     const {
       id,
       education = [],
@@ -91,7 +105,7 @@ export async function PUT(req: NextRequest) {
       skills = [],
       achievements = [],
       ...rest
-    } = await req.json();
+    } = parsed.data;
 
     // Update About
     await prisma.about.update({
@@ -134,14 +148,11 @@ export async function PUT(req: NextRequest) {
 // ✅ DELETE -> delete a nested relation inside About
 export async function DELETE(req: NextRequest) {
   try {
-    const { type, id } = await req.json();
+    if (!(await isAdmin())) return unauthorized();
 
-    if (!type || !id) {
-      return NextResponse.json(
-        { error: "Missing type or id" },
-        { status: 400 }
-      );
-    }
+    const parsed = aboutDeleteSchema.safeParse(await req.json());
+    if (!parsed.success) return badRequest(parsed.error);
+    const { type, id } = parsed.data;
 
     switch (type) {
       case "skills":

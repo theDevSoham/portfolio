@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { isAdmin, unauthorized } from "@/lib/auth";
+import {
+  contactCreateSchema,
+  contactUpdateSchema,
+  idSchema,
+  badRequest,
+} from "@/lib/validation";
 
 export async function GET() {
   const contact = await prisma.contact.findFirst({
@@ -9,7 +16,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const data = await req.json();
+  if (!(await isAdmin())) return unauthorized();
+
+  const parsed = contactCreateSchema.safeParse(await req.json());
+  if (!parsed.success) return badRequest(parsed.error);
+  const data = parsed.data;
+
   const contact = await prisma.contact.create({
     data: {
       phone: data.phone,
@@ -17,7 +29,7 @@ export async function POST(req: Request) {
       location: data.location,
       resumeUrl: data.resumeUrl,
       mediaUrl: data.mediaUrl,
-      socials: { create: data.socials || [] },
+      socials: { create: data.socials },
     },
     include: { socials: true },
   });
@@ -25,9 +37,11 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const data = await req.json();
-  if (!data.id)
-    return NextResponse.json({ error: "Contact id required" }, { status: 400 });
+  if (!(await isAdmin())) return unauthorized();
+
+  const parsed = contactUpdateSchema.safeParse(await req.json());
+  if (!parsed.success) return badRequest(parsed.error);
+  const data = parsed.data;
 
   const contact = await prisma.contact.update({
     where: { id: data.id },
@@ -39,11 +53,7 @@ export async function PUT(req: Request) {
       mediaUrl: data.mediaUrl,
       socials: {
         deleteMany: {}, // removes all old socials
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        create: (data.socials || []).map((s: any) => ({
-          platform: s.platform,
-          url: s.url,
-        })),
+        create: data.socials.map((s) => ({ platform: s.platform, url: s.url })),
       },
     },
     include: { socials: true },
@@ -53,10 +63,11 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const { id } = await req.json();
-  if (!id)
-    return NextResponse.json({ error: "Contact id required" }, { status: 400 });
+  if (!(await isAdmin())) return unauthorized();
 
-  await prisma.contact.delete({ where: { id } });
+  const parsed = idSchema.safeParse(await req.json());
+  if (!parsed.success) return badRequest(parsed.error);
+
+  await prisma.contact.delete({ where: { id: parsed.data.id } });
   return NextResponse.json({ message: "Contact deleted" });
 }

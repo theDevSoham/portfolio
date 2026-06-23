@@ -24,7 +24,6 @@ export default function ProjectPage() {
       try {
         const res = await fetch(`/api/projects/${slug}`);
         const data = await res.json();
-        console.log(data);
         setProject(data);
       } catch (err) {
         console.error("Error fetching project:", err);
@@ -171,14 +170,15 @@ export default function ProjectPage() {
           )}
         </div>
 
-        {/* Description */}
+        {/* Description — rendered as text (no raw HTML) to avoid XSS */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="linkify text-lg leading-relaxed text-slate-300 mb-10 whitespace-pre-line "
-          dangerouslySetInnerHTML={{ __html: project.description }}
-        />
+          className="text-lg leading-relaxed text-slate-300 mb-10 whitespace-pre-line"
+        >
+          {project.description}
+        </motion.p>
 
         {/* Tags */}
         <motion.div

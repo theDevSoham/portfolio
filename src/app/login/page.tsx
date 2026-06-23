@@ -7,18 +7,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    setError("");
+    setSubmitting(true);
 
     const res = await signIn("credentials", {
-      email,
+      email: email.trim(),
       password,
       redirect: false,
     });
 
     if (res?.error) {
       setError("Invalid credentials");
+      setSubmitting(false);
     } else {
       window.location.href = "/admin";
     }
@@ -39,6 +44,8 @@ export default function LoginPage() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
           className="w-full mb-3 px-3 py-2 bg-gray-700 rounded"
         />
 
@@ -47,14 +54,17 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
           className="w-full mb-3 px-3 py-2 bg-gray-700 rounded"
         />
 
         <button
           type="submit"
-          className="w-full bg-indigo-500 hover:bg-indigo-600 py-2 rounded"
+          disabled={submitting}
+          className="w-full bg-indigo-500 hover:bg-indigo-600 py-2 rounded disabled:opacity-60"
         >
-          Login
+          {submitting ? "Signing in…" : "Login"}
         </button>
       </form>
     </div>
