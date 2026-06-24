@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { FolderGit2, Plus, Edit2, Trash2, Check, X } from "lucide-react";
 import AdminAbout from "@/components/AdminAbout";
 import Image from "next/image";
@@ -21,12 +20,7 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-gray-800 p-6 rounded-xl max-w-lg w-full text-white shadow-2xl relative"
-      >
+      <div className="modal-pop bg-gray-800 p-6 rounded-xl max-w-lg w-full text-white shadow-2xl relative">
         {children}
         <button
           onClick={onClose}
@@ -34,7 +28,7 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
         >
           <X size={20} />
         </button>
-      </motion.div>
+      </div>
     </div>
   );
 };
@@ -262,10 +256,9 @@ export default function Admin() {
               {projects.map((project) => {
                 const Icon = iconMap[project.icon];
                 return (
-                  <motion.div
+                  <div
                     key={project.id}
-                    className="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 relative w-full my-6"
-                    whileHover={{ scale: 1.03 }}
+                    className="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 relative w-full my-6 transition-transform hover:scale-[1.03]"
                   >
                     {/* Header */}
                     <div className="flex items-center gap-3">
@@ -350,7 +343,7 @@ export default function Admin() {
                         <Trash2 size={18} />
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>

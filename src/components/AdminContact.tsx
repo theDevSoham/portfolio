@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
-import { motion } from "framer-motion";
 import { Contact as ContactType, SocialLink } from "@/lib/contact";
 import Image from "next/image";
 
@@ -305,11 +304,7 @@ export default function AdminContact() {
       {/* Social Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-gray-800 p-6 rounded-xl max-w-sm w-full shadow-2xl relative"
-          >
+          <div className="modal-pop bg-gray-800 p-6 rounded-xl max-w-sm w-full shadow-2xl relative">
             <button
               onClick={() => setModalOpen(false)}
               className="absolute top-3 right-3 text-gray-400 hover:text-white"
@@ -343,7 +338,7 @@ export default function AdminContact() {
             >
               <Check size={16} /> Save
             </button>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>

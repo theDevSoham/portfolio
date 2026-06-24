@@ -14,6 +14,49 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-pop {
+  animation: modal-pop 0.2s ease-out;
+}
+
+@keyframes loader-dot {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.loader-dot {
+  display: inline-block;
+  animation: loader-dot 1s infinite;
+}
+.loader-dot:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+.loader-dot:nth-of-type(3) {
+  animation-delay: 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-pop,
+  .loader-dot {
+    animation: none;
+  }
+}
+
 .linkify a {
   color: #818cf8; /* Tailwind indigo-400 */
   text-decoration: none;

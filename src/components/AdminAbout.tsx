@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Plus, Check, Trash2, Edit2, X } from "lucide-react";
 import type { About } from "@/lib/about";
 import Image from "next/image";
@@ -20,12 +19,7 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-gray-800 p-6 rounded-xl max-w-lg w-full text-white shadow-2xl relative"
-      >
+      <div className="modal-pop bg-gray-800 p-6 rounded-xl max-w-lg w-full text-white shadow-2xl relative">
         {children}
         <button
           onClick={onClose}
@@ -33,7 +27,7 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
         >
           <X size={20} />
         </button>
-      </motion.div>
+      </div>
     </div>
   );
 };
