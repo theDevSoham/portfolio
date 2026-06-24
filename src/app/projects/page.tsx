@@ -1,65 +1,32 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { FolderGit2 } from "lucide-react";
-import { iconMap } from "@/lib/iconMap"; // 👈 create a mapping of icon names to Lucide icons
-import { Project } from "@/lib/project";
+import type { Metadata } from "next";
+import Link from "next/link";
 import Image from "next/image";
+import { FolderGit2 } from "lucide-react";
+import { iconMap } from "@/lib/iconMap";
+import { getProjects } from "@/lib/data/projects";
+import Reveal from "@/components/anim/Reveal";
 
-// const containerVariants = {
-//   hidden: { opacity: 0 },
-//   show: {
-//     opacity: 1,
-//     transition: { staggerChildren: 0.25, delayChildren: 0.3 },
-//   },
-// };
+export const metadata: Metadata = {
+  title: "Projects | Soham Das",
+  description: "A curated selection of projects by Soham Das.",
+};
 
-// const itemVariants = {
-//   hidden: { opacity: 0, y: 40 },
-//   show: {
-//     opacity: 1,
-//     y: 0,
-//     transition: { type: "spring" as const, stiffness: 120, damping: 14 },
-//   },
-// };
+export const revalidate = 60;
 
 function truncateWords(text: string, wordLimit: number): string {
   if (!text) return "";
-  const words = text.split(/\s+/); // split by any whitespace
+  const words = text.split(/\s+/);
   if (words.length <= wordLimit) return text;
   return words.slice(0, wordLimit).join(" ") + "…";
 }
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch("/api/projects");
-        const data = await res.json();
-        setProjects(data);
-      } catch (err) {
-        console.error("Failed to fetch projects", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
-  }, []);
+export default async function ProjectsPage() {
+  const projects = await getProjects();
 
   return (
     <section className="min-h-screen bg-transparent py-20 px-6 text-white">
       {/* Heading */}
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: -40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        viewport={{ once: true }}
-      >
+      <Reveal className="text-center mb-16">
         <FolderGit2 className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
         <h1 className="text-4xl md:text-5xl font-bold">
           My <span className="text-indigo-400">Projects</span>
@@ -68,68 +35,45 @@ export default function ProjectsPage() {
           A curated selection of my work — blending clean design, modern
           technologies, and seamless user experiences.
         </p>
-      </motion.div>
+      </Reveal>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center text-slate-400 text-lg">
-          Loading projects...
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && projects.length === 0 && (
-        <motion.div
-          className="flex flex-col items-center justify-center py-20 text-slate-400"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+      {projects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <FolderGit2 className="w-10 h-10 text-slate-500 mb-4" />
           <p className="text-lg">No projects found. 🚀</p>
           <p className="text-sm text-slate-500">
             Add a new project to showcase your work.
           </p>
-        </motion.div>
-      )}
-
-      {/* Project List */}
-      {!loading && projects.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {projects.map((project, index) => {
-            const Icon = iconMap[project.icon] || FolderGit2;
+        </div>
+      ) : (
+        <Reveal
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
+          stagger={0.12}
+        >
+          {projects.map((project) => {
+            const Icon = iconMap[project.icon as keyof typeof iconMap] || FolderGit2;
+            const cover = project.images[0]?.url;
 
             return (
-              <motion.div
+              <Link
                 key={project.id}
-                className="flex flex-col overflow-hidden rounded-2xl shadow-lg border border-slate-700 bg-slate-800/70 backdrop-blur-md
-            hover:shadow-indigo-500/20 cursor-pointer relative"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 120,
-                  damping: 14,
-                  delay: index * 0.15, // stagger by index
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  rotate: -1,
-                  transition: { type: "spring", stiffness: 200, damping: 15 },
-                }}
-                whileTap={{ scale: 0.98, transition: { duration: 0.2 } }}
+                href={`/projects/${project.slug}`}
+                className="group flex flex-col overflow-hidden rounded-2xl shadow-lg border border-slate-700 bg-slate-800/70 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-indigo-500/20"
               >
-                <a
-                  href={`/projects/${project.slug}`}
-                  className="absolute w-full h-full top-0 left-0 z-10"
-                />
-                <div className="relative w-full h-64 md:h-48 lg:h-56">
-                  <Image
-                    src={project.images[0].url as string}
-                    alt={project.title}
-                    fill
-                    className="object-cover rounded-t-2xl"
-                  />
+                <div className="relative w-full h-64 md:h-48 lg:h-56 bg-slate-700">
+                  {cover ? (
+                    <Image
+                      src={cover}
+                      alt={project.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover rounded-t-2xl"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <FolderGit2 className="w-10 h-10 text-slate-500" />
+                    </div>
+                  )}
                 </div>
                 <div className="p-6 flex flex-col gap-3">
                   <div className="flex items-center gap-3">
@@ -140,10 +84,10 @@ export default function ProjectsPage() {
                     {truncateWords(project.description, 20)}
                   </p>
                 </div>
-              </motion.div>
+              </Link>
             );
           })}
-        </div>
+        </Reveal>
       )}
     </section>
   );

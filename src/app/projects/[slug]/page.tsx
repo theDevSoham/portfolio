@@ -1,134 +1,60 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ExternalLink, Tag, Calendar, ChevronLeft } from "lucide-react";
+import { getProjectBySlug, getProjectSlugs } from "@/lib/data/projects";
+import ProjectGallery from "@/components/projects/ProjectGallery";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  ExternalLink,
-  Tag,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { Project } from "@/lib/project";
-import { useRouter } from "next/navigation";
+export const revalidate = 60;
 
-export default function ProjectPage() {
-  const { slug } = useParams();
-  const [project, setProject] = useState<Project | null>(null);
-  const [currentImage, setCurrentImage] = useState(0);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const res = await fetch(`/api/projects/${slug}`);
-        const data = await res.json();
-        setProject(data);
-      } catch (err) {
-        console.error("Error fetching project:", err);
-      }
-    };
-    if (slug) fetchProject();
-  }, [slug]);
-
-  if (!project) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-white">
-        Loading project...
-      </div>
-    );
+export async function generateStaticParams() {
+  try {
+    const slugs = await getProjectSlugs();
+    return slugs.map((slug) => ({ slug }));
+  } catch {
+    // DB unavailable at build → render detail pages on demand (ISR) instead.
+    return [];
   }
+}
 
-  const handlePrev = () => {
-    setCurrentImage((prev) =>
-      prev === 0 ? project.images.length - 1 : prev - 1
-    );
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await getProjectBySlug(slug);
+  if (!project) return { title: "Project not found | Soham Das" };
+  return {
+    title: `${project.title} | Soham Das`,
+    description: project.description.slice(0, 160),
   };
+}
 
-  const handleNext = () => {
-    setCurrentImage((prev) =>
-      prev === project.images.length - 1 ? 0 : prev + 1
-    );
-  };
+export default async function ProjectPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const project = await getProjectBySlug(slug);
+  if (!project) notFound();
 
   return (
     <section className="min-h-screen bg-transparent text-white py-16 px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="max-w-5xl mx-auto"
-      >
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-indigo-400 mb-6 hover:text-indigo-300 transition"
+      <div className="max-w-5xl mx-auto">
+        {/* Back */}
+        <Link
+          href="/projects"
+          className="flex items-center gap-2 text-indigo-400 mb-6 hover:text-indigo-300 transition w-fit"
         >
           <ChevronLeft className="w-5 h-5" /> Go to Projects
-        </button>
-        {/* Hero */}
-        <div className="relative mb-12">
-          {project.images.length > 0 && (
-            <motion.img
-              key={project.images[currentImage].id}
-              src={project.images[currentImage].url}
-              alt={project.images[currentImage].alt || project.title}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full h-72 md:h-96 object-contain rounded-2xl shadow-2xl"
-            />
-          )}
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="absolute bottom-4 left-6 text-3xl md:text-5xl font-bold text-indigo-400 drop-shadow-lg"
-          >
-            {project.title}
-          </motion.h1>
+        </Link>
 
-          {/* Carousel Controls */}
-          {project.images.length > 1 && (
-            <>
-              <button
-                onClick={handlePrev}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-2 rounded-full hover:bg-black/60 transition"
-              >
-                <ChevronLeft className="w-6 h-6 text-white" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-2 rounded-full hover:bg-black/60 transition"
-              >
-                <ChevronRight className="w-6 h-6 text-white" />
-              </button>
-            </>
-          )}
-        </div>
+        {/* Gallery (client island) */}
+        <ProjectGallery images={project.images} title={project.title} />
 
-        {/* Thumbnails */}
-        {project.images.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto mb-8 pb-2">
-            {project.images.map((img, idx) => (
-              <motion.img
-                key={img.id}
-                src={img.url}
-                alt={img.alt || `${project.title} image ${idx + 1}`}
-                onClick={() => setCurrentImage(idx)}
-                whileHover={{ scale: 1.05 }}
-                className={`w-24 h-20 object-contain rounded-lg cursor-pointer border-2 transition ${
-                  idx === currentImage
-                    ? "border-indigo-400"
-                    : "border-transparent"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Meta info */}
+        {/* Meta */}
         <div className="flex flex-wrap items-center gap-4 text-slate-400 mb-8">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
@@ -171,22 +97,12 @@ export default function ProjectPage() {
         </div>
 
         {/* Description — rendered as text (no raw HTML) to avoid XSS */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-lg leading-relaxed text-slate-300 mb-10 whitespace-pre-line"
-        >
+        <p className="text-lg leading-relaxed text-slate-300 mb-10 whitespace-pre-line">
           {project.description}
-        </motion.p>
+        </p>
 
         {/* Tags */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex flex-wrap gap-3"
-        >
+        <div className="flex flex-wrap gap-3">
           {project.tags.map((tag) => (
             <span
               key={tag}
@@ -196,8 +112,8 @@ export default function ProjectPage() {
               {tag}
             </span>
           ))}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </section>
   );
 }

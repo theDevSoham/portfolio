@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import PageLoader from "@/components/PageLoader";
+import SmoothScroll from "@/components/providers/SmoothScroll";
 
 export const metadata: Metadata = {
   title: "Soham Das - Portfolio",
@@ -59,15 +60,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="bg-black text-slate-300 antialiased">
-        <PageLoader />
-        <header className="sticky top-0 backdrop-blur z-50 border-b lg:mb-20 mb-10">
-          <Navbar />
-        </header>
-        <main className="max-w-5xl mx-auto px-0 lg:px-6 py-12">{children}</main>
-        <footer className="border-t mt-12 py-6 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} Soham Das — Built with Next.js + Tailwind
-          CSS
-        </footer>
+        <SmoothScroll>
+          <PageLoader />
+          <header className="sticky top-0 backdrop-blur z-50 border-b lg:mb-20 mb-10">
+            <Navbar />
+          </header>
+          <main className="max-w-5xl mx-auto px-0 lg:px-6 py-12">{children}</main>
+          <footer className="border-t mt-12 py-6 text-center text-sm text-slate-500">
+            © {new Date().getFullYear()} Soham Das — Built with Next.js +
+            Tailwind CSS
+          </footer>
+        </SmoothScroll>
       </body>
     </html>
   );
