@@ -1,7 +1,10 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageLoader from "@/components/PageLoader";
+import EntryScreen from "@/components/EntryScreen";
+import KonamiEasterEgg from "@/components/KonamiEasterEgg";
 import Aurora from "@/components/visual/Aurora";
+import ScrollProgress from "@/components/visual/ScrollProgress";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 
 export default function SiteLayout({
@@ -9,15 +12,18 @@ export default function SiteLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <SmoothScroll>
+      <EntryScreen />
       <Aurora />
       <div
         aria-hidden
         className="noise pointer-events-none fixed inset-0 -z-10 opacity-[0.04]"
       />
+      <ScrollProgress />
       <PageLoader />
       <Navbar />
       <main className="min-h-[70vh]">{children}</main>
       <Footer />
+      <KonamiEasterEgg />
     </SmoothScroll>
   );
 }

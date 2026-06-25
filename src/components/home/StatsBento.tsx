@@ -1,11 +1,13 @@
+import type { ReactNode } from "react";
 import { User } from "lucide-react";
 import type { AboutData } from "@/lib/data/about";
 import Reveal from "@/components/anim/Reveal";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/Section";
+import { CountUp } from "@/components/ui/CountUp";
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label }: { value: ReactNode; label: string }) {
   return (
     <Card className="p-6 flex flex-col justify-center gap-1">
       <span className="stat-number text-4xl">{value}</span>
@@ -67,9 +69,9 @@ export function StatsBento({
       </Reveal>
 
       <Reveal className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4" stagger={0.08}>
-        <Stat value={`${projectsCount}`} label="projects shipped" />
-        <Stat value={`${about?.skills.length ?? 0}`} label="technologies" />
-        <Stat value={`${about?.experiences.length ?? 0}`} label="roles held" />
+        <Stat value={<CountUp value={projectsCount} />} label="projects shipped" />
+        <Stat value={<CountUp value={about?.skills.length ?? 0} />} label="technologies" />
+        <Stat value={<CountUp value={about?.experiences.length ?? 0} />} label="roles held" />
         <Stat value="∞" label="cups of coffee" />
       </Reveal>
     </Container>

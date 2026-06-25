@@ -169,6 +169,57 @@
   }
 }
 
+/* Glitch RGB-split (404) */
+@keyframes glitch {
+  0%,
+  100% {
+    text-shadow: 2px 0 var(--accent), -2px 0 var(--primary);
+    transform: translateX(0);
+  }
+  25% {
+    text-shadow: -2px 0 var(--accent), 2px 0 var(--primary);
+    transform: translateX(1px);
+  }
+  50% {
+    text-shadow: 2px 0 var(--primary), -2px 0 var(--accent);
+    transform: translateX(0);
+  }
+  75% {
+    text-shadow: -1px 0 var(--accent), 1px 0 var(--primary);
+    transform: translateX(-1px);
+  }
+}
+.glitch-text {
+  animation: glitch 1.4s infinite steps(2, end);
+}
+
+/* Confetti (konami easter egg) */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-12vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(102vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  position: fixed;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-text,
+  .confetti-piece {
+    animation: none;
+  }
+}
+
 /* Scroll cue bob */
 @keyframes scroll-bob {
   0%,
