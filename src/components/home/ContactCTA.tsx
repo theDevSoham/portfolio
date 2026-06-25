@@ -11,7 +11,7 @@ export function ContactCTA() {
         <div className="ring-gradient relative overflow-hidden rounded-3xl border border-border bg-card/40 backdrop-blur-md px-8 py-16 md:px-16 md:py-20 text-center">
           <div
             aria-hidden
-            className="absolute -top-24 left-1/2 -translate-x-1/2 w-[60%] h-48 rounded-full blur-3xl opacity-30"
+            className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[60%] h-48 rounded-full blur-3xl opacity-30"
             style={{ background: "radial-gradient(circle, var(--primary), transparent 70%)" }}
           />
           <p className="eyebrow text-sm">{"// let's talk"}</p>
