@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Mail, Download } from "lucide-react";
 import { useForm, ValidationError } from "@formspree/react";
+import Button, { buttonVariants } from "@/components/ui/Button";
 
 type Grecaptcha = { execute: (key: string, opts: { action: string }) => Promise<string> };
+
+const inputClass =
+  "p-3 rounded-lg bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
 export default function ContactForm({ resumeUrl }: { resumeUrl?: string | null }) {
   const [state, handleSubmit] = useForm("mvgbeqag");
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Load reCAPTCHA v3 once.
   useEffect(() => {
     if (document.querySelector("#recaptcha-script")) return;
     const script = document.createElement("script");
@@ -21,7 +24,6 @@ export default function ContactForm({ resumeUrl }: { resumeUrl?: string | null }
     document.body.appendChild(script);
   }, []);
 
-  // Reset + notify on success (effect, not during render).
   useEffect(() => {
     if (state.succeeded) {
       formRef.current?.reset();
@@ -55,45 +57,25 @@ export default function ContactForm({ resumeUrl }: { resumeUrl?: string | null }
     <form
       ref={formRef}
       onSubmit={onSubmit}
-      className="flex-1 flex flex-col gap-6 bg-slate-800/70 backdrop-blur-md rounded-2xl p-4 lg:p-8 shadow-lg border border-slate-700"
+      className="flex-1 flex flex-col gap-5 rounded-2xl border border-border bg-card/70 backdrop-blur-md p-6 lg:p-8 shadow-lg"
     >
-      <input
-        type="text"
-        name="user_name"
-        placeholder="Your Name"
-        required
-        className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-      />
-      <input
-        type="email"
-        name="user_email"
-        placeholder="Your Email"
-        required
-        className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-      />
+      <input type="text" name="user_name" placeholder="Your Name" required className={inputClass} />
+      <input type="email" name="user_email" placeholder="Your Email" required className={inputClass} />
       <textarea
         placeholder="Your Message"
         name="user_message"
         rows={5}
         required
-        className="p-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className={inputClass}
       />
 
-      <button
-        type="submit"
-        disabled={state.submitting}
-        className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 rounded-xl font-medium hover:bg-indigo-700 transition disabled:opacity-60"
-      >
+      <Button type="submit" variant="gradient" disabled={state.submitting}>
         {state.submitting ? "Sending…" : "Send Message"} <Mail size={18} />
-      </button>
+      </Button>
       <ValidationError errors={state.errors} />
 
       {resumeUrl && (
-        <a
-          href={resumeUrl}
-          download
-          className="flex items-center justify-center gap-2 px-6 py-3 border border-indigo-400 rounded-xl font-medium hover:bg-indigo-600 hover:text-white transition"
-        >
+        <a href={resumeUrl} download className={buttonVariants({ variant: "outline" })}>
           Download Resume <Download size={18} />
         </a>
       )}

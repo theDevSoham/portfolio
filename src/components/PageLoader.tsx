@@ -8,21 +8,24 @@ import { useGSAP } from "@gsap/react";
 
 const icons = [Laptop, Code2, Rocket];
 
-export default function PageLoader({ forced }: { forced?: boolean }) {
+export default function PageLoader() {
   const [visible, setVisible] = useState(false); // logically active
   const [mounted, setMounted] = useState(false); // present in DOM
   const [iconIndex, setIconIndex] = useState(0);
   const pathname = usePathname();
+  const prevPath = useRef(pathname);
   const overlayRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
 
-  // Show briefly on route change.
+  // Show ONLY on a real route change — never on the initial load/refresh,
+  // where the static page is already painted (nothing to load).
   useEffect(() => {
-    if (forced) return;
+    if (prevPath.current === pathname) return;
+    prevPath.current = pathname;
     setVisible(true);
-    const t = setTimeout(() => setVisible(false), 1200);
+    const t = setTimeout(() => setVisible(false), 900);
     return () => clearTimeout(t);
-  }, [pathname, forced]);
+  }, [pathname]);
 
   useEffect(() => {
     if (visible) setMounted(true);
@@ -38,13 +41,13 @@ export default function PageLoader({ forced }: { forced?: boolean }) {
     return () => clearInterval(i);
   }, [visible]);
 
-  // Fade overlay in/out (out-tween before unmount — replaces AnimatePresence).
+  // Fade overlay in/out (out-tween before unmount).
   useGSAP(
     () => {
       const el = overlayRef.current;
       if (!el) return;
       if (visible) {
-        gsap.to(el, { opacity: 1, duration: 0.3, ease: "power2.out" });
+        gsap.to(el, { opacity: 1, duration: 0.25, ease: "power2.out" });
       } else if (mounted) {
         gsap.to(el, {
           opacity: 0,
@@ -76,12 +79,12 @@ export default function PageLoader({ forced }: { forced?: boolean }) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md opacity-0"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md opacity-0"
     >
-      <div ref={iconRef} className="text-indigo-400">
+      <div ref={iconRef} className="text-primary">
         <CurrentIcon size={64} strokeWidth={1.5} />
       </div>
-      <div className="mt-6 text-white text-lg font-semibold flex items-center gap-1">
+      <div className="mt-6 text-foreground text-lg font-semibold flex items-center gap-1">
         Loading
         <span className="loader-dot">.</span>
         <span className="loader-dot">.</span>

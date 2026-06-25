@@ -80,7 +80,7 @@ export default function ProjectGallery({
               alt={img.alt || `${title} image ${idx + 1}`}
               onClick={() => setCurrent(idx)}
               className={`w-24 h-20 object-contain rounded-lg cursor-pointer border-2 transition hover:scale-105 ${
-                idx === current ? "border-indigo-400" : "border-transparent"
+                idx === current ? "border-primary" : "border-transparent"
               }`}
             />
           ))}

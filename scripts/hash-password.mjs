@@ -1,6 +1,5 @@
 // Generate a bcrypt hash for the admin password.
 // Usage:  node scripts/hash-password.mjs "your-password"
-// Copy the printed value into ADMIN_PASSWORD_HASH in your .env.local
 import bcrypt from "bcryptjs";
 
 const password = process.argv[2];
@@ -10,4 +9,11 @@ if (!password) {
 }
 
 const hash = await bcrypt.hash(password, 12);
-console.log("\nADMIN_PASSWORD_HASH=" + hash + "\n");
+// bcrypt hashes contain `$`, which Next's .env loader treats as variable
+// expansion and silently corrupts. Escape each `$` for local .env files.
+const escaped = hash.replace(/\$/g, "\\$");
+
+console.log("\n# .env.local — escape the $ signs (required, or the hash is mangled):");
+console.log("ADMIN_PASSWORD_HASH=" + escaped);
+console.log("\n# Hosting dashboard (Vercel, etc.) — env vars are literal, paste the raw hash:");
+console.log("ADMIN_PASSWORD_HASH=" + hash + "\n");

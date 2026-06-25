@@ -2,119 +2,79 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Check, Trash2, Edit2, X } from "lucide-react";
-import type { About } from "@/lib/about";
+import { Plus, Check, Trash2, Edit2, User } from "lucide-react";
 import Image from "next/image";
-
-// ---------------------- Modal ----------------------
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}
+import type { About } from "@/lib/about";
+import Button from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  AdminModal,
+  Field,
+  adminInput,
+  PageHeader,
+  Spinner,
+  type ToastState,
+} from "@/components/admin/AdminKit";
 
 type SectionType = "skills" | "education" | "experiences" | "achievements";
 
-const Modal = ({ isOpen, onClose, children }: ModalProps) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="modal-pop bg-gray-800 p-6 rounded-xl max-w-lg w-full text-white shadow-2xl relative">
-        {children}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-white"
-        >
-          <X size={20} />
-        </button>
-      </div>
-    </div>
-  );
-};
+const iconBtn =
+  "grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors";
 
-// ---------------------- Main ----------------------
-export default function AdminAbout() {
+export default function AdminAbout({ onToast }: { onToast: (t: ToastState) => void }) {
   const [aboutData, setAboutData] = useState<About | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Modal state for adding/editing items
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<SectionType>("skills");
   const [editingItem, setEditingItem] = useState<any>(null);
   const [tempValue, setTempValue] = useState<any>({});
 
-  // ---------------------- Fetch existing data ----------------------
   useEffect(() => {
     const fetchAbout = async () => {
       try {
         const res = await fetch("/api/about");
         const data = await res.json();
-
-        if (data?.id) {
-          setAboutData({
-            ...data,
-            name: data.name ?? "",
-            headline: data.headline ?? "",
-            bio: data.bio ?? "",
-            avatarUrl: data.avatarUrl ?? "",
-            education: data.education ?? [],
-            experiences: data.experiences ?? [],
-            skills: data.skills ?? [],
-            achievements: data.achievements ?? [],
-          });
-        } else {
-          setAboutData({
-            id: "",
-            name: "",
-            headline: "",
-            bio: "",
-            avatarUrl: "",
-            createdAt: "",
-            updatedAt: "",
-            education: [],
-            experiences: [],
-            skills: [],
-            achievements: [],
-          });
-        }
-      } catch (err) {
-        console.error(err);
+        setAboutData({
+          id: data?.id ?? "",
+          name: data?.name ?? "",
+          headline: data?.headline ?? "",
+          bio: data?.bio ?? "",
+          avatarUrl: data?.avatarUrl ?? "",
+          createdAt: data?.createdAt ?? "",
+          updatedAt: data?.updatedAt ?? "",
+          education: data?.education ?? [],
+          experiences: data?.experiences ?? [],
+          skills: data?.skills ?? [],
+          achievements: data?.achievements ?? [],
+        });
+      } catch {
+        onToast({ message: "Failed to load About data", type: "error" });
       } finally {
         setLoading(false);
       }
     };
     fetchAbout();
-  }, []);
+  }, [onToast]);
 
-  // ---------------------- Handlers ----------------------
-  const openModal = (type: typeof modalType, item: any = null) => {
+  const openModal = (type: SectionType, item: any = null) => {
     setModalType(type);
     setEditingItem(item);
-
-    if (item) {
-      setTempValue(item);
-    } else {
-      // empty templates for each type
-      if (type === "skills") setTempValue({ name: "" });
-      if (type === "education")
-        setTempValue({
-          degree: "",
-          school: "",
-          startYear: "",
-          endYear: "",
-          grade: "",
-        });
-      if (type === "experiences")
-        setTempValue({ role: "", company: "", duration: "", desc: "" });
-      if (type === "achievements") setTempValue({ text: "" });
-    }
-
+    if (item) setTempValue(item);
+    else if (type === "skills") setTempValue({ name: "" });
+    else if (type === "education")
+      setTempValue({ degree: "", school: "", startYear: "", endYear: "", grade: "" });
+    else if (type === "experiences")
+      setTempValue({ role: "", company: "", duration: "", desc: "" });
+    else if (type === "achievements") setTempValue({ text: "" });
     setModalOpen(true);
   };
 
   const handleSaveItem = () => {
     if (!aboutData) return;
-
     const updated: About = {
       ...aboutData,
       education: aboutData.education ?? [],
@@ -125,100 +85,63 @@ export default function AdminAbout() {
 
     switch (modalType) {
       case "skills": {
-        const skillNames = tempValue.name
-          .split(",")
-          .map((s: string) => s.trim())
-          .filter(Boolean);
-
-        if (editingItem) {
-          // update existing skill: keep id
+        const names = tempValue.name.split(",").map((s: string) => s.trim()).filter(Boolean);
+        if (editingItem)
           updated.skills = updated.skills.map((s) =>
             s.id === editingItem.id ? { ...s, name: tempValue.name } : s
           );
-        } else {
-          // new skills: no id
-          const newSkills = skillNames.map((name: string) => ({ name }));
-          updated.skills.push(...newSkills);
-        }
+        else updated.skills.push(...names.map((name: string) => ({ name })));
         break;
       }
-
       case "achievements": {
-        const achievementTexts = tempValue.text
-          .split(",")
-          .map((a: string) => a.trim())
-          .filter(Boolean);
-
-        if (editingItem) {
+        const texts = tempValue.text.split(",").map((a: string) => a.trim()).filter(Boolean);
+        if (editingItem)
           updated.achievements = updated.achievements.map((a) =>
             a.id === editingItem.id ? { ...a, text: tempValue.text } : a
           );
-        } else {
-          const newAchievements = achievementTexts.map((text: string) => ({
-            text,
-          }));
-          updated.achievements.push(...newAchievements);
-        }
+        else updated.achievements.push(...texts.map((text: string) => ({ text })));
         break;
       }
-
       case "education": {
-        if (editingItem) {
+        if (editingItem)
           updated.education = updated.education.map((e) =>
             e.id === editingItem.id ? { ...e, ...tempValue } : e
           );
-        } else {
-          updated.education.push({ ...tempValue }); // no id
-        }
+        else updated.education.push({ ...tempValue });
         break;
       }
-
       case "experiences": {
-        if (editingItem) {
+        if (editingItem)
           updated.experiences = updated.experiences.map((e) =>
             e.id === editingItem.id ? { ...e, ...tempValue } : e
           );
-        } else {
-          updated.experiences.push({ ...tempValue }); // no id
-        }
+        else updated.experiences.push({ ...tempValue });
         break;
       }
     }
-
     setAboutData(updated);
     setModalOpen(false);
   };
 
-  const handleDelete = async (type: typeof modalType, id: string) => {
+  const handleDelete = async (type: SectionType, id: string) => {
     if (!aboutData) return;
-
-    // ✅ Send delete request to backend
-    await fetch("/api/about", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, id }),
-    });
-
-    // ✅ Update local state optimistically
+    if (id) {
+      await fetch("/api/about", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, id }),
+      }).catch(() => onToast({ message: "Delete failed", type: "error" }));
+    }
     const updated: About = { ...aboutData };
-    if (type === "skills")
-      updated.skills = updated.skills.filter((s) => s.id !== id);
-    if (type === "education")
-      updated.education = updated.education.filter((e) => e.id !== id);
-    if (type === "experiences")
-      updated.experiences = updated.experiences.filter((e) => e.id !== id);
-    if (type === "achievements")
-      updated.achievements = updated.achievements.filter((a) => a.id !== id);
-
+    updated[type] = (updated[type] as any[]).filter((x) => x.id !== id) as any;
     setAboutData(updated);
   };
 
   const handleSubmit = async () => {
     if (!aboutData) return;
+    setSaving(true);
     try {
       const method = aboutData.id ? "PUT" : "POST";
-
-      // Also include About main fields
       const payload = {
         id: aboutData.id,
         name: aboutData.name,
@@ -230,336 +153,243 @@ export default function AdminAbout() {
         education: aboutData.education.filter((e) => !e.id),
         experiences: aboutData.experiences.filter((ex) => !ex.id),
       };
-
       const res = await fetch("/api/about", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!res.ok) return alert("About save failed");
-
-      const saved = await res.json();
-      setAboutData(saved);
-      alert("About saved successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("Error saving data");
+      if (!res.ok) throw new Error();
+      setAboutData(await res.json());
+      onToast({ message: "About saved" });
+    } catch {
+      onToast({ message: "Save failed — check your inputs", type: "error" });
+    } finally {
+      setSaving(false);
     }
   };
 
-  // ---------------------- UI ----------------------
-  if (loading) return <p className="text-white">Loading...</p>;
-  if (!aboutData) return <p className="text-white">Failed to load data</p>;
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      setAboutData((prev) => prev && { ...prev, avatarUrl: url });
+      onToast({ message: "Avatar uploaded" });
+    } catch {
+      onToast({ message: "Upload failed", type: "error" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="px-6 pb-12">
+        <PageHeader title="About" subtitle="Loading…" />
+        <div className="max-w-3xl space-y-6">
+          <Skeleton className="h-48 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+  if (!aboutData) return <p className="p-6 text-muted-foreground">Failed to load data.</p>;
+
+  const itemLabel = (section: SectionType, item: any) =>
+    section === "skills"
+      ? item.name
+      : section === "education"
+      ? `${item.degree} — ${item.school}`
+      : section === "experiences"
+      ? `${item.role} @ ${item.company}`
+      : item.text;
 
   return (
-    <div className="flex min-h-screen bg-transparent text-white p-8">
-      <main className="flex-1 space-y-6">
-        <h1 className="text-3xl font-bold text-indigo-400 mb-4">
-          Edit About Page
-        </h1>
+    <div className="px-6 pb-12">
+      <PageHeader
+        title="About"
+        subtitle="Profile, experience, education, skills & achievements"
+        action={
+          <Button onClick={handleSubmit} variant="gradient" size="sm" disabled={saving}>
+            {saving ? <Spinner /> : <Check size={16} />} Save changes
+          </Button>
+        }
+      />
 
-        {/* Name */}
-        <div className="space-y-2">
-          <label className="block text-gray-300">Name</label>
-          <input
-            type="text"
-            value={aboutData.name || ""}
-            onChange={(e) =>
-              setAboutData((prev) => prev && { ...prev, name: e.target.value })
-            }
-            className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-          />
-        </div>
-
-        {/* Headline */}
-        <div className="space-y-2">
-          <label className="block text-gray-300">Headline</label>
-          <input
-            type="text"
-            value={aboutData.headline || ""}
-            onChange={(e) =>
-              setAboutData(
-                (prev) => prev && { ...prev, headline: e.target.value }
-              )
-            }
-            className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-          />
-        </div>
-
-        {/* Bio */}
-        <div className="space-y-2">
-          <label className="block text-gray-300">Bio</label>
-          <textarea
-            value={aboutData.bio || ""}
-            onChange={(e) =>
-              setAboutData((prev) => prev && { ...prev, bio: e.target.value })
-            }
-            className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-            rows={3}
-          />
-        </div>
-
-        {/* Avatar Upload */}
-        <div className="space-y-2">
-          <label className="block text-gray-300">Avatar</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-
-              const formData = new FormData();
-              formData.append("file", file);
-
-              try {
-                // call backend to upload to Cloudinary
-                const res = await fetch("/api/upload", {
-                  method: "POST",
-                  body: formData,
-                });
-
-                if (!res.ok) return alert("Upload failed");
-                const { url } = await res.json();
-
-                setAboutData((prev) => prev && { ...prev, avatarUrl: url });
-              } catch (err) {
-                console.error("Upload error:", err);
-                alert("Failed to upload avatar");
-              }
-            }}
-            className="w-full text-gray-300"
-          />
-
-          {aboutData.avatarUrl && (
-            <Image
-              src={aboutData.avatarUrl}
-              alt="Avatar Preview"
-              className="w-24 h-24 rounded-full object-cover border border-gray-600 mt-2"
-              width={500}
-              height={500}
+      <div className="max-w-3xl space-y-6">
+        {/* Profile */}
+        <Card className="space-y-4 p-6">
+          <h2 className="font-display text-lg font-semibold">Profile</h2>
+          <Field label="Name">
+            <input
+              className={adminInput}
+              value={aboutData.name || ""}
+              onChange={(e) => setAboutData((p) => p && { ...p, name: e.target.value })}
             />
-          )}
-        </div>
-
-        {/* Dynamic Lists */}
-        {(["skills", "education", "experiences", "achievements"] as const).map(
-          (section) => {
-            const items = aboutData?.[section] ?? [];
-
-            return (
-              <div key={section} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-indigo-400 capitalize">
-                    {section}
-                  </h2>
-                  <button
-                    onClick={() => openModal(section)}
-                    className="flex items-center gap-2 px-3 py-1 bg-indigo-400 rounded hover:bg-indigo-500"
-                  >
-                    <Plus size={16} /> Add
-                  </button>
-                </div>
-
-                {items.length > 0 ? (
-                  <div className="grid gap-3">
-                    {items.map((item: any, index: number) => (
-                      <div
-                        key={item.id || `${section}-temp-${index}`} // use index for new items
-                        className="flex items-center justify-between bg-gray-800 p-3 rounded"
-                      >
-                        <span>
-                          {section === "skills" && item.name}
-                          {section === "education" &&
-                            `${item.degree} - ${item.school}`}
-                          {section === "experiences" &&
-                            `${item.role} @ ${item.company}`}
-                          {section === "achievements" && item.text}
-                        </span>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => openModal(section, item)}
-                            className="text-blue-400"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(section, item.id)}
-                            className="text-red-400"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          </Field>
+          <Field label="Headline">
+            <input
+              className={adminInput}
+              value={aboutData.headline || ""}
+              onChange={(e) => setAboutData((p) => p && { ...p, headline: e.target.value })}
+            />
+          </Field>
+          <Field label="Bio">
+            <textarea
+              rows={4}
+              className={adminInput}
+              value={aboutData.bio || ""}
+              onChange={(e) => setAboutData((p) => p && { ...p, bio: e.target.value })}
+            />
+          </Field>
+          <Field label="Avatar">
+            <div className="flex items-center gap-4">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+                {aboutData.avatarUrl ? (
+                  <Image src={aboutData.avatarUrl} alt="Avatar" fill sizes="80px" className="object-cover" />
                 ) : (
-                  <p className="text-gray-400 italic">
-                    No {section} added yet. Click{" "}
-                    <span className="font-semibold">+ Add</span> to create one.
-                  </p>
+                  <div className="grid h-full place-items-center text-muted-foreground">
+                    <User size={24} />
+                  </div>
+                )}
+                {uploading && (
+                  <div className="absolute inset-0 grid place-items-center bg-background/60">
+                    <Spinner />
+                  </div>
                 )}
               </div>
-            );
-          }
-        )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={uploadAvatar}
+                className="text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-foreground hover:file:bg-border"
+              />
+            </div>
+          </Field>
+        </Card>
 
-        {/* Submit */}
-        <button
-          onClick={handleSubmit}
-          className="flex items-center gap-2 px-6 py-3 bg-green-500 rounded-md hover:bg-green-600 mt-4"
-        >
-          <Check size={18} /> Save Changes
-        </button>
-      </main>
+        {/* Dynamic sections */}
+        {(["experiences", "education", "skills", "achievements"] as const).map((section) => {
+          const items = aboutData[section] ?? [];
+          return (
+            <Card key={section} className="space-y-3 p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-lg font-semibold capitalize">{section}</h2>
+                <Button variant="outline" size="sm" onClick={() => openModal(section)}>
+                  <Plus size={16} /> Add
+                </Button>
+              </div>
+              {items.length > 0 ? (
+                <div className="space-y-2">
+                  {items.map((item: any, index: number) => (
+                    <div
+                      key={item.id || `${section}-${index}`}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-2.5"
+                    >
+                      <span className="truncate text-sm">{itemLabel(section, item)}</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => openModal(section, item)}
+                          aria-label="Edit"
+                          className={`${iconBtn} hover:border-primary/40 hover:text-primary`}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(section, item.id)}
+                          aria-label="Delete"
+                          className={`${iconBtn} hover:border-red-500/40 hover:text-red-400`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No {section} yet — click <span className="text-foreground">Add</span>.
+                </p>
+              )}
+            </Card>
+          );
+        })}
+      </div>
 
-      {/* Modal for Add/Edit */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
-        <h2 className="text-xl font-bold text-indigo-400 mb-4 capitalize">
-          {editingItem ? "Edit" : "Add"} {modalType}
-        </h2>
-        {/* Render fields dynamically */}
+      {/* Add/Edit item modal */}
+      <AdminModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={`${editingItem ? "Edit" : "Add"} ${modalType}`}
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="gradient" size="sm" onClick={handleSaveItem}>
+              <Check size={16} /> Save
+            </Button>
+          </>
+        }
+      >
         {modalType === "skills" && (
-          <input
-            type="text"
-            placeholder="Skill Names (comma separated)"
-            value={tempValue.name || ""}
-            onChange={(e) =>
-              setTempValue((prev: any) => ({ ...prev, name: e.target.value }))
-            }
-            className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-3"
-          />
+          <Field label="Skill names" hint="comma separated to add several at once">
+            <input
+              className={adminInput}
+              value={tempValue.name || ""}
+              onChange={(e) => setTempValue((p: any) => ({ ...p, name: e.target.value }))}
+            />
+          </Field>
         )}
         {modalType === "education" && (
-          <>
-            <input
-              type="text"
-              placeholder="Degree"
-              value={tempValue.degree || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  degree: e.target.value,
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <input
-              type="text"
-              placeholder="School"
-              value={tempValue.school || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  school: e.target.value,
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <input
-              type="number"
-              placeholder="Start Year"
-              value={tempValue.startYear || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  startYear: Number(e.target.value),
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <input
-              type="number"
-              placeholder="End Year"
-              value={tempValue.endYear || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  endYear: Number(e.target.value),
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Grade"
-              value={tempValue.grade || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  grade: e.target.value,
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-            />
-          </>
+          <div className="space-y-4">
+            <Field label="Degree">
+              <input className={adminInput} value={tempValue.degree || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, degree: e.target.value }))} />
+            </Field>
+            <Field label="School">
+              <input className={adminInput} value={tempValue.school || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, school: e.target.value }))} />
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Start year">
+                <input type="number" className={adminInput} value={tempValue.startYear || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, startYear: Number(e.target.value) }))} />
+              </Field>
+              <Field label="End year">
+                <input type="number" className={adminInput} value={tempValue.endYear || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, endYear: Number(e.target.value) }))} />
+              </Field>
+            </div>
+            <Field label="Grade">
+              <input className={adminInput} value={tempValue.grade || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, grade: e.target.value }))} />
+            </Field>
+          </div>
         )}
         {modalType === "experiences" && (
-          <>
-            <input
-              type="text"
-              placeholder="Role"
-              value={tempValue.role || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({ ...prev, role: e.target.value }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Company"
-              value={tempValue.company || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  company: e.target.value,
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Duration"
-              value={tempValue.duration || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({
-                  ...prev,
-                  duration: e.target.value,
-                }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white mb-2"
-            />
-            <textarea
-              placeholder="Description"
-              value={tempValue.desc || ""}
-              onChange={(e) =>
-                setTempValue((prev: any) => ({ ...prev, desc: e.target.value }))
-              }
-              className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              rows={3}
-            />
-          </>
+          <div className="space-y-4">
+            <Field label="Role">
+              <input className={adminInput} value={tempValue.role || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, role: e.target.value }))} />
+            </Field>
+            <Field label="Company">
+              <input className={adminInput} value={tempValue.company || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, company: e.target.value }))} />
+            </Field>
+            <Field label="Duration">
+              <input className={adminInput} value={tempValue.duration || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, duration: e.target.value }))} />
+            </Field>
+            <Field label="Description">
+              <textarea rows={3} className={adminInput} value={tempValue.desc || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, desc: e.target.value }))} />
+            </Field>
+          </div>
         )}
         {modalType === "achievements" && (
-          <textarea
-            placeholder="Achievements (comma separated)"
-            value={tempValue.text || ""}
-            onChange={(e) =>
-              setTempValue((prev: any) => ({ ...prev, text: e.target.value }))
-            }
-            className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-            rows={2}
-          />
+          <Field label="Achievements" hint="comma separated to add several at once">
+            <textarea rows={3} className={adminInput} value={tempValue.text || ""} onChange={(e) => setTempValue((p: any) => ({ ...p, text: e.target.value }))} />
+          </Field>
         )}
-
-        <button
-          onClick={handleSaveItem}
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 rounded hover:bg-green-600 mt-4"
-        >
-          <Check size={16} /> Save
-        </button>
-      </Modal>
+      </AdminModal>
     </div>
   );
 }

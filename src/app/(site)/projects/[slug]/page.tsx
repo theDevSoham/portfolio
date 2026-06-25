@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ExternalLink, Tag, Calendar, ChevronLeft } from "lucide-react";
 import { getProjectBySlug, getProjectSlugs } from "@/lib/data/projects";
 import ProjectGallery from "@/components/projects/ProjectGallery";
+import { Badge } from "@/components/ui/Badge";
 
 export const revalidate = 60;
 
@@ -41,12 +42,12 @@ export default async function ProjectPage({
   if (!project) notFound();
 
   return (
-    <section className="min-h-screen bg-transparent text-white py-16 px-6">
+    <section className="pt-32 pb-20 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Back */}
         <Link
           href="/projects"
-          className="flex items-center gap-2 text-indigo-400 mb-6 hover:text-indigo-300 transition w-fit"
+          className="flex items-center gap-2 text-primary mb-6 hover:opacity-80 transition w-fit"
         >
           <ChevronLeft className="w-5 h-5" /> Go to Projects
         </Link>
@@ -55,7 +56,7 @@ export default async function ProjectPage({
         <ProjectGallery images={project.images} title={project.title} />
 
         {/* Meta */}
-        <div className="flex flex-wrap items-center gap-4 text-slate-400 mb-8">
+        <div className="flex flex-wrap items-center gap-4 text-muted-foreground mb-8">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             <span>
@@ -71,7 +72,7 @@ export default async function ProjectPage({
               href={project.repoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:text-indigo-400 transition-colors"
+              className="flex items-center gap-2 hover:text-primary transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -89,7 +90,7 @@ export default async function ProjectPage({
               href={project.liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:text-indigo-400 transition-colors"
+              className="flex items-center gap-2 hover:text-primary transition-colors"
             >
               <ExternalLink className="w-4 h-4" /> Live
             </a>
@@ -97,20 +98,17 @@ export default async function ProjectPage({
         </div>
 
         {/* Description — rendered as text (no raw HTML) to avoid XSS */}
-        <p className="text-lg leading-relaxed text-slate-300 mb-10 whitespace-pre-line">
+        <p className="text-lg leading-relaxed text-muted-foreground mb-10 whitespace-pre-line">
           {project.description}
         </p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-3">
           {project.tags.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-1 bg-slate-800 px-3 py-1 rounded-full text-sm text-indigo-300"
-            >
+            <Badge key={tag} variant="primary">
               <Tag className="w-3 h-3" />
               {tag}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>

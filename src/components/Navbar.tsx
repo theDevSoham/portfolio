@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navLinks = [
   { href: "/projects", label: "Projects" },
@@ -23,43 +24,37 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const headerRef = useRef<HTMLElement>(null);
-  const underlineRef = useRef<HTMLSpanElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
   const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
   const mobileRef = useRef<HTMLDivElement>(null);
 
-  // Entrance (once on mount)
+  // Entrance
   useGSAP(
     () => {
       if (prefersReduced()) return;
-      gsap.from(".nav-intro", {
-        opacity: 0,
-        y: -12,
-        duration: 0.5,
-        ease: "power3.out",
-        stagger: 0.08,
-      });
+      gsap.from(headerRef.current, { y: -24, opacity: 0, duration: 0.6, ease: "power3.out" });
     },
     { scope: headerRef }
   );
 
-  // Active underline — slides to the active link (replaces Framer layoutId)
+  // Sliding active pill behind the current link
   useGSAP(
     () => {
-      const underline = underlineRef.current;
-      if (!underline) return;
+      const pill = pillRef.current;
+      if (!pill) return;
       const active = linkRefs.current[pathname];
       if (!active) {
-        gsap.set(underline, { opacity: 0 });
+        gsap.to(pill, { opacity: 0, duration: 0.2 });
         return;
       }
       const vars = { x: active.offsetLeft, width: active.offsetWidth, opacity: 1 };
-      if (prefersReduced()) gsap.set(underline, vars);
-      else gsap.to(underline, { ...vars, duration: 0.35, ease: "power2.out" });
+      if (prefersReduced()) gsap.set(pill, vars);
+      else gsap.to(pill, { ...vars, duration: 0.4, ease: "power3.out" });
     },
     { dependencies: [pathname] }
   );
 
-  // Mobile menu open/close (replaces AnimatePresence height collapse)
+  // Mobile menu
   useGSAP(
     () => {
       const el = mobileRef.current;
@@ -72,7 +67,7 @@ export default function Navbar() {
         gsap.set(el, { height: "auto", opacity: 1 });
         gsap.from(el, { height: 0, opacity: 0, duration: 0.3, ease: "power2.out" });
         gsap.from(el.querySelectorAll("a"), {
-          x: -20,
+          y: -10,
           opacity: 0,
           duration: 0.3,
           stagger: 0.07,
@@ -88,16 +83,20 @@ export default function Navbar() {
   return (
     <header
       ref={headerRef}
-      className="fixed top-0 left-0 w-full z-50 border-b border-white/10 bg-white/10 backdrop-blur-lg shadow-md"
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[min(94%,52rem)]"
     >
-      <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
-        {/* Logo */}
-        <Link href="/" className="nav-intro text-xl font-bold text-indigo-400">
-          Soham.dev
+      <div className="glass flex items-center justify-between gap-2 rounded-2xl px-4 py-2.5 shadow-xl">
+        <Link href="/" className="font-display text-lg font-bold tracking-tight px-2">
+          <span className="text-gradient">Soham</span>
+          <span className="text-muted-foreground">.dev</span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="relative hidden md:flex space-x-6">
+        {/* Desktop links */}
+        <nav className="relative hidden md:flex items-center">
+          <span
+            ref={pillRef}
+            className="pointer-events-none absolute left-0 top-0 h-full w-0 rounded-xl bg-primary/15 opacity-0"
+          />
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -107,37 +106,32 @@ export default function Navbar() {
                 ref={(el) => {
                   linkRefs.current[link.href] = el;
                 }}
-                className={`nav-intro relative text-slate-300 hover:text-indigo-400 transition-colors ${
-                  isActive ? "text-indigo-500 font-semibold" : ""
+                className={`relative z-10 px-4 py-2 text-sm rounded-xl transition-colors ${
+                  isActive ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {link.label}
               </Link>
             );
           })}
-          <span
-            ref={underlineRef}
-            className="pointer-events-none absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-500 rounded-full opacity-0"
-          />
         </nav>
 
-        {/* Mobile toggle */}
-        <button
-          className="md:hidden p-2 rounded hover:bg-white/10"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle menu"
-          aria-expanded={open}
-        >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <button
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={open}
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
-      {/* Mobile nav (always mounted; GSAP animates height) */}
-      <div
-        ref={mobileRef}
-        className="md:hidden h-0 opacity-0 overflow-hidden bg-slate-900/95 border-t border-white/10"
-      >
-        <nav className="px-6 py-4 space-y-3">
+      {/* Mobile menu */}
+      <div ref={mobileRef} className="md:hidden h-0 opacity-0 overflow-hidden">
+        <nav className="glass mt-2 rounded-2xl p-3 flex flex-col">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -145,10 +139,10 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className={`block transition-colors ${
+                className={`px-4 py-3 rounded-xl transition-colors ${
                   isActive
-                    ? "text-indigo-400 font-semibold"
-                    : "text-slate-300 hover:text-indigo-400"
+                    ? "text-foreground font-semibold bg-primary/15"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 {link.label}

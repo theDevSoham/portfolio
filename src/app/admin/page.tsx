@@ -1,87 +1,82 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FolderGit2, Plus, Edit2, Trash2, Check, X } from "lucide-react";
-import AdminAbout from "@/components/AdminAbout";
 import Image from "next/image";
+import Link from "next/link";
+import {
+  FolderGit2,
+  Plus,
+  Edit2,
+  Trash2,
+  Github,
+  ExternalLink,
+  User,
+  Mail,
+  LogOut,
+  ArrowUpRight,
+} from "lucide-react";
+import { signOut } from "next-auth/react";
+import AdminAbout from "@/components/AdminAbout";
+import AdminContact from "@/components/AdminContact";
 import { Project } from "@/lib/project";
 import { iconMap } from "@/lib/iconMap";
-import AdminContact from "@/components/AdminContact";
-import { signOut } from "next-auth/react";
+import Button from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  AdminModal,
+  Field,
+  adminInput,
+  Toast,
+  type ToastState,
+  EmptyState,
+  PageHeader,
+  Spinner,
+} from "@/components/admin/AdminKit";
 
-// ---------------------- Modal ----------------------
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}
+type Section = "projects" | "about" | "contact";
 
-const Modal = ({ isOpen, onClose, children }: ModalProps) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="modal-pop bg-gray-800 p-6 rounded-xl max-w-lg w-full text-white shadow-2xl relative">
-        {children}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-white"
-        >
-          <X size={20} />
-        </button>
-      </div>
-    </div>
-  );
+const NAV: { key: Section; label: string; icon: typeof FolderGit2 }[] = [
+  { key: "projects", label: "Projects", icon: FolderGit2 },
+  { key: "about", label: "About", icon: User },
+  { key: "contact", label: "Contact", icon: Mail },
+];
+
+const emptyForm = {
+  title: "",
+  description: "",
+  icon: "FolderGit2",
+  slug: "",
+  tags: "",
+  repoUrl: "",
+  liveUrl: "",
+  imageUrls: "",
+  imageFiles: [] as File[],
 };
 
-// ---------------------- Main Component ----------------------
 export default function Admin() {
-  const [activeSection, setActiveSection] = useState<
-    "projects" | "about" | "contact"
-  >("projects");
-
+  const [activeSection, setActiveSection] = useState<Section>("projects");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<ToastState>(null);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"add" | "edit" | "delete" | null>(
-    null
-  );
+  const [modalType, setModalType] = useState<"add" | "edit" | "delete" | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    icon: "FolderGit2",
-    slug: "",
-    tags: "",
-    repoUrl: "",
-    liveUrl: "",
-    imageUrls: "", // comma-separated input
-    imageFiles: [] as File[], // local file uploads
-  });
-
-  // Fetch projects on mount
   useEffect(() => {
     fetch("/api/projects")
       .then((res) => res.json())
-      .then((data) => setProjects(data));
+      .then((data) => setProjects(Array.isArray(data) ? data : []))
+      .catch(() => setToast({ message: "Failed to load projects", type: "error" }))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Open Modals
   const openAddModal = () => {
     setSelectedProject(null);
-    setFormData({
-      title: "",
-      description: "",
-      icon: "FolderGit2",
-      slug: "",
-      tags: "",
-      repoUrl: "",
-      liveUrl: "",
-      imageUrls: "",
-      imageFiles: [],
-    });
+    setFormData(emptyForm);
     setModalType("add");
     setModalOpen(true);
   };
@@ -109,12 +104,8 @@ export default function Admin() {
     setModalOpen(true);
   };
 
-  // ----------------- CRUD Handlers -----------------
-
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -125,357 +116,372 @@ export default function Admin() {
     setFormData((prev) => ({ ...prev, imageFiles: files }));
   };
 
-  // Add/Edit Project
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
 
-    const formPayload = new FormData();
-    formPayload.append("title", formData.title);
-    formPayload.append("description", formData.description);
-    formPayload.append("icon", formData.icon);
-    formPayload.append("slug", formData.slug);
-    formPayload.append("tags", formData.tags);
-    formPayload.append("repoUrl", formData.repoUrl);
-    formPayload.append("liveUrl", formData.liveUrl);
+    const payload = new FormData();
+    payload.append("title", formData.title);
+    payload.append("description", formData.description);
+    payload.append("icon", formData.icon);
+    payload.append("slug", formData.slug);
+    payload.append("tags", formData.tags);
+    payload.append("repoUrl", formData.repoUrl);
+    payload.append("liveUrl", formData.liveUrl);
 
-    // Image URLs
     if (formData.imageUrls.trim()) {
       formData.imageUrls
         .split(",")
         .map((u) => u.trim())
-        .forEach((url, i) => formPayload.append(`images[${i}]`, url)); // ✅ matches backend
+        .filter(Boolean)
+        .forEach((url, i) => payload.append(`images[${i}]`, url));
     }
+    formData.imageFiles.forEach((file) => payload.append("imageFiles", file));
 
-    // Uploaded files
-    formData.imageFiles.forEach((file) =>
-      formPayload.append("imageFiles", file)
-    );
+    const method = modalType === "edit" ? "PUT" : "POST";
+    if (modalType === "edit" && selectedProject) payload.append("id", selectedProject.id);
 
-    let url = "/api/projects";
-    let method = "POST";
+    try {
+      const res = await fetch("/api/projects", { method, body: payload });
+      if (!res.ok) throw new Error();
+      const project = await res.json();
 
-    if (modalType === "edit" && selectedProject) {
-      url = "/api/projects";
-      method = "PUT";
-      formPayload.append("id", selectedProject.id);
+      if (modalType === "add") setProjects((prev) => [project, ...prev]);
+      else setProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)));
+
+      setModalOpen(false);
+      setToast({ message: modalType === "edit" ? "Project updated" : "Project added" });
+    } catch {
+      setToast({ message: "Save failed — check your inputs", type: "error" });
+    } finally {
+      setSaving(false);
     }
-
-    const res = await fetch(url, {
-      method,
-      body: formPayload,
-    });
-
-    const project = await res.json();
-
-    if (modalType === "add") {
-      setProjects((prev) => [...prev, project]);
-    } else if (modalType === "edit") {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === project.id ? project : p))
-      );
-    }
-
-    setModalOpen(false);
   };
 
-  // Delete Project
   const handleDelete = async () => {
     if (!selectedProject) return;
-    await fetch("/api/projects", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: selectedProject.id }),
-    });
-    setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
-    setModalOpen(false);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/projects", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedProject.id }),
+      });
+      if (!res.ok) throw new Error();
+      setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
+      setModalOpen(false);
+      setToast({ message: "Project deleted" });
+    } catch {
+      setToast({ message: "Delete failed", type: "error" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // ----------------- Render -----------------
+  const iconBtn =
+    "grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors";
+
   return (
-    <div className="flex min-h-screen bg-transparent text-white">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 p-6 flex flex-col gap-6 rounded-lg">
-        <h2 className="text-2xl font-bold text-indigo-400">Admin Panel</h2>
-        <nav className="flex flex-col gap-4">
-          <a
-            href="#"
-            onClick={() => setActiveSection("projects")}
-            className="hover:text-indigo-500"
-          >
-            Projects
-          </a>
-          <a
-            href="#"
-            onClick={() => setActiveSection("about")}
-            className="hover:text-indigo-500"
-          >
-            About
-          </a>
-          <a
-            href="#"
-            onClick={() => setActiveSection("contact")}
-            className="hover:text-indigo-500"
-          >
-            Contact
-          </a>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card/40 backdrop-blur-md md:flex">
+        <div className="border-b border-border px-5 py-5">
+          <p className="font-display text-lg font-bold">
+            <span className="text-gradient">Soham</span>
+            <span className="text-muted-foreground">.dev</span>
+          </p>
+          <p className="font-mono text-xs text-muted-foreground">admin console</p>
+        </div>
+
+        <nav className="flex-1 space-y-1 p-3">
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const active = activeSection === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveSection(item.key)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  active
+                    ? "bg-primary/15 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icon size={18} />
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-400 rounded-md hover:bg-indigo-500 transition mt-4"
-        >
-          <Plus size={18} /> Add Project
-        </button>
-        <button
-          onClick={async () => {
-            await signOut();
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-red-400 rounded-md hover:bg-red-500 transition mt-4"
-        >
-          <Plus size={18} /> Logout
-        </button>
+
+        <div className="space-y-2 border-t border-border p-3">
+          <Link
+            href="/"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ArrowUpRight size={16} /> View site
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-red-400 hover:bg-red-500/10 hover:border-red-500/40"
+            onClick={() => signOut({ callbackUrl: "/" })}
+          >
+            <LogOut size={16} /> Logout
+          </Button>
+        </div>
       </aside>
 
-      {/* Main */}
-      {activeSection === "projects" && (
-        <main className="flex-1 p-8 overflow-y-auto space-y-6">
-          <h1 className="text-3xl font-bold text-indigo-400 mb-4">
-            Manage Projects
-          </h1>
-          {projects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center text-gray-400">
-              <FolderGit2 className="w-16 h-16 mb-4 animate-bounce" />
-              <h2 className="text-2xl font-semibold mb-2">No Projects Yet</h2>
-              <p className="max-w-md">
-                Your projects will appear here once you add them. Click the{" "}
-                <span className="font-bold text-indigo-400">Add Project</span>{" "}
-                button to get started!
-              </p>
-            </div>
-          ) : (
-            <div className="grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
-              {projects.map((project) => {
-                const Icon = iconMap[project.icon];
-                return (
-                  <div
-                    key={project.id}
-                    className="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 relative w-full my-6 transition-transform hover:scale-[1.03]"
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        {/* Mobile section switcher */}
+        <div className="flex gap-2 overflow-x-auto border-b border-border p-3 md:hidden">
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const active = activeSection === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveSection(item.key)}
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm whitespace-nowrap ${
+                  active ? "bg-primary/15 text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <Icon size={16} /> {item.label}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 whitespace-nowrap"
+          >
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
+
+        {activeSection === "projects" && (
+          <div className="px-6 pb-12">
+            <PageHeader
+              title="Projects"
+              subtitle={loading ? "Loading…" : `${projects.length} project${projects.length === 1 ? "" : "s"}`}
+              action={
+                <Button onClick={openAddModal} variant="gradient" size="sm">
+                  <Plus size={16} /> Add Project
+                </Button>
+              }
+            />
+
+            {loading ? (
+              <ul className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-4 rounded-xl border border-border bg-card/50 p-4"
                   >
-                    {/* Header */}
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-8 h-8 text-indigo-400" />
-                      <h3 className="text-xl font-semibold">{project.title}</h3>
+                    <Skeleton className="h-16 w-16 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-3 w-1/4" />
+                      <Skeleton className="h-5 w-2/5" />
                     </div>
+                  </li>
+                ))}
+              </ul>
+            ) : projects.length === 0 ? (
+              <EmptyState
+                icon={<FolderGit2 size={26} />}
+                title="No projects yet"
+                description="Your projects will show up here. Add your first one to get started."
+                action={
+                  <Button onClick={openAddModal} variant="gradient" size="sm">
+                    <Plus size={16} /> Add Project
+                  </Button>
+                }
+              />
+            ) : (
+              <ul className="space-y-3">
+                {projects.map((project) => {
+                  const Icon = iconMap[project.icon as keyof typeof iconMap] || FolderGit2;
+                  const cover = project.images?.[0]?.url;
+                  return (
+                    <li
+                      key={project.id}
+                      className="group flex items-center gap-4 rounded-xl border border-border bg-card/50 p-3 transition-colors hover:border-primary/40 sm:p-4"
+                    >
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+                        {cover ? (
+                          <Image src={cover} alt={project.title} fill sizes="64px" className="object-cover" />
+                        ) : (
+                          <div className="grid h-full place-items-center text-muted-foreground">
+                            <FolderGit2 size={20} />
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Description */}
-                    <p className="text-gray-300">
-                      {project.description.split(" ").slice(0, 200).join(" ")}
-                      {project.description.split(" ").length > 200 && "..."}
-                    </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 shrink-0 text-accent" />
+                          <h3 className="truncate font-semibold">{project.title}</h3>
+                        </div>
+                        <p className="truncate font-mono text-xs text-muted-foreground">
+                          /projects/{project.slug}
+                        </p>
+                        {project.tags?.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {project.tags.slice(0, 4).map((tag, i) => (
+                              <Badge key={i} variant="outline">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {project.tags.length > 4 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{project.tags.length - 4}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Tags */}
-                    {project.tags && project.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {project.tags.map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-indigo-500 text-white px-2 py-1 rounded-full text-xs"
+                      <div className="hidden items-center gap-1 sm:flex">
+                        {project.repoUrl && (
+                          <a
+                            href={project.repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Repository"
+                            className={`${iconBtn} hover:border-primary/40 hover:text-foreground`}
                           >
-                            {tag}
-                          </span>
-                        ))}
+                            <Github size={16} />
+                          </a>
+                        )}
+                        {project.liveUrl && (
+                          <a
+                            href={project.liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Live site"
+                            className={`${iconBtn} hover:border-primary/40 hover:text-foreground`}
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                        )}
                       </div>
-                    )}
 
-                    {/* Links */}
-                    <div className="flex flex-col gap-1 text-sm">
-                      {project.repoUrl && (
-                        <a
-                          href={project.repoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-400 hover:underline block truncate max-w-xs"
-                          title={project.repoUrl}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openEditModal(project)}
+                          aria-label="Edit"
+                          className={`${iconBtn} hover:border-primary/40 hover:text-primary`}
                         >
-                          Repo: {project.repoUrl}
-                        </a>
-                      )}
-                      {project.liveUrl && (
-                        <a
-                          href={project.liveUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-400 hover:underline block truncate max-w-xs"
-                          title={project.liveUrl}
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(project)}
+                          aria-label="Delete"
+                          className={`${iconBtn} hover:border-red-500/40 hover:text-red-400`}
                         >
-                          Live: {project.liveUrl}
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Images preview */}
-                    {project.images && project.images.length > 0 && (
-                      <div className="grid grid-cols-2 gap-3 mt-2">
-                        {project.images.map((img, idx) => (
-                          <Image
-                            key={idx}
-                            src={img.url}
-                            alt={`${project.title} image ${idx + 1}`}
-                            className="w-full h-40 object-cover rounded-md shadow"
-                            width={500}
-                            height={500}
-                          />
-                        ))}
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 mt-2">
-                      <button
-                        onClick={() => openEditModal(project)}
-                        className="p-2 bg-indigo-400 rounded hover:bg-indigo-500 transition"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(project)}
-                        className="p-2 bg-red-500 rounded hover:bg-red-600 transition"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </main>
-      )}
-
-      {activeSection === "about" && <AdminAbout />}
-      {activeSection === "contact" && <AdminContact />}
-
-      {/* Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
-        {modalType === "delete" ? (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-red-400">Delete Project</h2>
-            <p>
-              Are you sure you want to delete &quot;{selectedProject?.title}
-              &quot;?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-500 rounded hover:bg-red-600 transition flex items-center gap-2"
-              >
-                <Trash2 /> Delete
-              </button>
-            </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-        ) : (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-indigo-400">
-              {modalType === "edit" ? "Edit Project" : "Add Project"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="title"
-                placeholder="Title"
-                value={formData.title}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              />
-              <textarea
-                name="description"
-                placeholder="Description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-                rows={3}
-              />
-              <input
-                type="text"
-                name="slug"
-                placeholder="Slug"
-                value={formData.slug}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              />
-              <input
-                type="text"
-                name="tags"
-                placeholder="Tags (comma separated)"
-                value={formData.tags}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              />
-              <input
-                type="text"
-                name="repoUrl"
-                placeholder="Repository URL"
-                value={formData.repoUrl}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              />
-              <input
-                type="text"
-                name="liveUrl"
-                placeholder="Live URL"
-                value={formData.liveUrl}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              />
+        )}
 
-              {/* Image URLs */}
-              <textarea
-                name="imageUrls"
-                placeholder="Image URLs (comma separated, optional if uploading files)"
-                value={formData.imageUrls}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-                rows={3}
-              />
+        {activeSection === "about" && <AdminAbout onToast={setToast} />}
+        {activeSection === "contact" && <AdminContact onToast={setToast} />}
+      </div>
 
-              {/* Multiple File Upload */}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileChange}
-                className="w-full text-gray-300"
-              />
-
-              <select
-                name="icon"
-                value={formData.icon}
-                onChange={handleChange}
-                className="w-full bg-gray-700 rounded-md px-3 py-2 text-white"
-              >
+      {/* Add / Edit modal */}
+      <AdminModal
+        open={modalOpen && modalType !== "delete"}
+        onClose={() => !saving && setModalOpen(false)}
+        title={modalType === "edit" ? "Edit project" : "Add project"}
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button variant="gradient" size="sm" type="submit" form="project-form" disabled={saving}>
+              {saving ? <Spinner /> : null}
+              {modalType === "edit" ? "Save changes" : "Add project"}
+            </Button>
+          </>
+        }
+      >
+        <form id="project-form" onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Title">
+            <input name="title" value={formData.title} onChange={handleChange} required className={adminInput} placeholder="My awesome project" />
+          </Field>
+          <Field label="Description">
+            <textarea name="description" value={formData.description} onChange={handleChange} rows={3} required className={adminInput} placeholder="What it does, the stack, the impact…" />
+          </Field>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Slug" hint="lowercase, hyphens only">
+              <input name="slug" value={formData.slug} onChange={handleChange} required className={adminInput} placeholder="my-awesome-project" />
+            </Field>
+            <Field label="Icon">
+              <select name="icon" value={formData.icon} onChange={handleChange} className={adminInput}>
                 {Object.keys(iconMap).map((icon) => (
                   <option key={icon} value={icon}>
                     {icon}
                   </option>
                 ))}
               </select>
-
-              <button
-                type="submit"
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 rounded hover:bg-green-600 transition"
-              >
-                <Check size={18} />
-                {modalType === "edit" ? "Save Changes" : "Add Project"}
-              </button>
-            </form>
+            </Field>
           </div>
-        )}
-      </Modal>
+          <Field label="Tags" hint="comma separated">
+            <input name="tags" value={formData.tags} onChange={handleChange} className={adminInput} placeholder="react, next.js, typescript" />
+          </Field>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Repository URL">
+              <input name="repoUrl" value={formData.repoUrl} onChange={handleChange} className={adminInput} placeholder="https://github.com/…" />
+            </Field>
+            <Field label="Live URL">
+              <input name="liveUrl" value={formData.liveUrl} onChange={handleChange} className={adminInput} placeholder="https://…" />
+            </Field>
+          </div>
+          <Field label="Image URLs" hint="comma separated, optional if uploading files">
+            <textarea name="imageUrls" value={formData.imageUrls} onChange={handleChange} rows={2} className={adminInput} placeholder="https://res.cloudinary.com/…" />
+          </Field>
+          <Field label="Upload images">
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} className="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-foreground hover:file:bg-border" />
+          </Field>
+        </form>
+      </AdminModal>
+
+      {/* Delete modal */}
+      <AdminModal
+        open={modalOpen && modalType === "delete"}
+        onClose={() => !saving && setModalOpen(false)}
+        title="Delete project"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-red-500 text-white hover:opacity-90"
+              onClick={handleDelete}
+              disabled={saving}
+            >
+              {saving ? <Spinner /> : <Trash2 size={16} />} Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-muted-foreground">
+          Are you sure you want to delete{" "}
+          <span className="font-semibold text-foreground">{selectedProject?.title}</span>? This
+          can&rsquo;t be undone.
+        </p>
+      </AdminModal>
+
+      <Toast toast={toast} onDone={() => setToast(null)} />
     </div>
   );
 }
