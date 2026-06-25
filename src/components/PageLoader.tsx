@@ -28,6 +28,7 @@ export default function PageLoader() {
   }, [pathname]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount overlay when a navigation begins
     if (visible) setMounted(true);
   }, [visible]);
 

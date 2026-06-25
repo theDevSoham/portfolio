@@ -28,6 +28,7 @@ export default function EntryScreen() {
     } catch {}
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (seen || reduced) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- skip the intro on revisit / reduced-motion
       setPhase("done");
       return;
     }

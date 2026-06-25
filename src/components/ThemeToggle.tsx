@@ -9,6 +9,7 @@ export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch — theme is only known on the client.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot client mount flag
   useEffect(() => setMounted(true), []);
 
   const isDark = resolvedTheme === "dark";
