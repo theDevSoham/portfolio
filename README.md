@@ -1,198 +1,88 @@
-# Portfolio Website
+# Soham.dev — Portfolio
 
-A modern, responsive portfolio website built with **Next.js 14 (App Router)**, **TypeScript**, **Framer Motion**, and **Cloudinary** for showcasing projects. Designed for developers to present projects, blogs, and personal skills in a visually engaging way.
+A modern, animated developer portfolio with a built-in admin CMS. Dark, gradient, "terminal-aurora" aesthetic, server-rendered for speed and SEO.
 
----
-
-## Table of Contents
-
-* [Features](#features)
-* [Tech Stack](#tech-stack)
-* [Project Structure](#project-structure)
-* [Demo & Screenshots](#demo--screenshots)
-* [Getting Started](#getting-started)
-* [API Routes](#api-routes)
-* [Deployment](#deployment)
-* [Environment Variables](#environment-variables)
-* [Contributing](#contributing)
-* [License](#license)
+Built with **Next.js 15 (App Router)** · **TypeScript** · **Tailwind CSS v4** · **GSAP + Lenis** · **Prisma + MongoDB** · **NextAuth** · **Cloudinary**.
 
 ---
 
 ## Features
 
-* **Dynamic Project Pages**: Each project has its own page with carousel images, tags, descriptions, and meta info.
-* **Image Uploads**: Seamless image uploads to Cloudinary with serverless API routes.
-* **Responsive Design**: Works perfectly on desktop, tablet, and mobile.
-* **Animations**: Smooth UI animations using Framer Motion.
-* **Authentication & Admin Panel**: Secure admin login to manage projects (via NextAuth).
-* **SEO Friendly**: Metadata per project and proper semantic HTML.
-* **Tags & Filtering**: Projects are tagged and easily filterable.
+- **Server-first** — public pages are Server Components (SSR/SSG + ISR); no client-side data waterfalls.
+- **GSAP + Lenis** — smooth scrolling, scroll-reveals, an animated hero portrait, and an aurora background. No Framer Motion.
+- **Design system** — a neon dev-terminal token system (dark + light via `next-themes`) and a small shadcn-style component library (`Button`, `Card`, `Badge`, `Timeline`, …).
+- **Admin CMS** — a real admin console (sidebar, loading skeletons, saving/toast states) to manage Projects, About, and Contact, gated by auth.
+- **Hardened** — every mutation API requires an admin session and validates input with Zod; uploads are type/size limited.
+- **Experience layer** — first-visit boot screen, scroll-progress bar, animated stat count-ups, a Konami easter egg, and a branded 404 / error pages.
+- **SEO** — generated OG image, `sitemap.xml`, `robots.txt`, per-page metadata. Accessibility: skip link, focus rings, `prefers-reduced-motion` support throughout.
 
----
+## Tech stack
 
-## Tech Stack
+| Area | Choice |
+|---|---|
+| Framework | Next.js 15 (App Router, RSC) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS v4, CSS variable tokens |
+| Animation | GSAP, `@gsap/react`, Lenis |
+| Data | Prisma ORM + MongoDB |
+| Auth | NextAuth (credentials, JWT, bcrypt) |
+| Media | Cloudinary |
+| Forms | Formspree + reCAPTCHA v3 (contact) |
 
-* **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS, Framer Motion
-* **Backend/API**: Next.js API Routes, Prisma ORM
-* **Database**: MongoDB (via Prisma)
-* **File Storage**: Cloudinary
-* **Authentication**: NextAuth.js
-* **Deployment**: Vercel
-
----
-
-## Project Structure
+## Project structure
 
 ```
-/src
- ├─ /app
- │   ├─ /projects
- │   │   ├─ [slug]/page.tsx          # Individual project page
- │   │   └─ page.tsx                  # Projects listing page
- │   └─ /api
- │       ├─ /projects/[slug]/route.ts # Project fetch API
- │       └─ /upload/route.ts          # Image upload API
- ├─ /lib
- │   ├─ prisma.ts                      # Prisma client
- │   └─ cloudinary.ts                  # Cloudinary client
- └─ /components
-     └─ Reusable UI components
+src/
+├── app/
+│   ├── (site)/            # public pages + marketing chrome layout
+│   │   ├── page.tsx       # landing (hero, marquee, bento, featured, CTA)
+│   │   ├── about/ projects/ contact/ login/
+│   │   └── layout.tsx     # Navbar, Footer, Aurora, SmoothScroll, EntryScreen…
+│   ├── admin/             # admin console (auth-gated, chrome-less)
+│   ├── api/               # route handlers (guarded mutations)
+│   ├── layout.tsx         # root: <html>/<body> + ThemeProvider + metadata
+│   ├── opengraph-image.tsx, robots.ts, sitemap.ts, not-found.tsx, global-error.tsx
+│   └── globals.css        # tokens, utilities, keyframes
+├── components/            # ui/, admin/, home/, visual/, anim/, providers/
+└── lib/                   # data/ (server reads), auth, validation, prisma, cloudinary
 ```
 
----
-
-## Demo & Screenshots
-
-### Home / Projects Listing
-
-<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 34 52 PM" src="https://github.com/user-attachments/assets/9ab00156-9a2c-4453-a191-56b204491098" />
-<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 36 17 PM" src="https://github.com/user-attachments/assets/08bc8f39-7105-4791-a996-a4b323b0a95f" />
-
----
-
-### Individual Project Page
-
-<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 37 01 PM" src="https://github.com/user-attachments/assets/99212aa9-9f86-485e-ab39-aa2628a7e278" />
-
-* Image carousel with previous/next buttons
-* Animated transitions using Framer Motion
-* Tags and project metadata
-
----
-
-### Admin Panel
-
-<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 37 41 PM" src="https://github.com/user-attachments/assets/32d5f721-998e-44c0-ad99-7fd38ba0bfda" />
-
-
-* Secure login using email/password
-* Upload project images
-* Add/edit project details, tags, and links
-
----
-
-### Image Upload Example
-
-<img width="800" height="600" alt="Screenshot 2025-09-19 at 12 38 47 PM" src="https://github.com/user-attachments/assets/06b73c6f-9583-4526-8284-7e03553611a9" />
-
-* Upload directly to Cloudinary
-* Serverless API handles file storage
-* Live preview after upload
-
----
-
-## Getting Started
-
-1. **Clone the repository**
+## Getting started
 
 ```bash
-git clone https://github.com/yourusername/portfolio.git
-cd portfolio
-```
-
-2. **Install dependencies**
-
-```bash
+# 1. install
 yarn install
-```
 
-3. **Set environment variables**
+# 2. configure env (see .env.example)
+cp .env.example .env.local   # then fill in values
 
-Create a `.env.local` file:
-
-```env
-DATABASE_URL=<your-mongodb-url>
-NEXTAUTH_SECRET=<your-nextauth-secret>
-NEXTAUTH_URL=http://localhost:3000
-CLOUDINARY_CLOUD_NAME=<your-cloud-name>
-CLOUDINARY_API_KEY=<your-api-key>
-CLOUDINARY_API_SECRET=<your-api-secret>
-ADMIN_USER=<admin-email>
-ADMIN_PASSWORD=<admin-password>
-```
-
-4. **Run the development server**
-
-```bash
+# 3. generate Prisma client & run
+yarn prisma:generate
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view your portfolio.
+App runs at http://localhost:3000.
 
----
+### Admin login
 
-## API Routes
+Generate a password hash and set it in `.env.local`:
 
-| Route                  | Method | Description                         |
-| ---------------------- | ------ | ----------------------------------- |
-| `/api/projects`        | GET    | Fetch all projects                  |
-| `/api/projects/[slug]` | GET    | Fetch project by slug               |
-| `/api/upload`          | POST   | Upload project images to Cloudinary |
+```bash
+node scripts/hash-password.mjs "your-password"
+```
 
----
+> **Heads-up:** bcrypt hashes contain `$`, which Next's env loader expands. The script prints a **`\$`-escaped** line for `.env.local`. On hosting dashboards (Vercel), paste the **raw** hash instead.
+
+Log in at `/login`, manage content at `/admin`.
+
+## Environment variables
+
+See [`.env.example`](.env.example). Required: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_USER`, `ADMIN_PASSWORD_HASH`, `CLOUDINARY_*`, `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`. Set `NEXT_PUBLIC_SITE_URL` in production so metadata, OG, sitemap, and robots resolve to your domain.
 
 ## Deployment
 
-* **Vercel** recommended for seamless Next.js App Router deployment.
-* Ensure **environment variables** are set in Vercel dashboard for production:
-
-```env
-NEXTAUTH_URL=https://your-domain.vercel.app
-DATABASE_URL=<production-mongodb-url>
-NEXTAUTH_SECRET=<secret>
-CLOUDINARY_CLOUD_NAME=<cloud-name>
-CLOUDINARY_API_KEY=<api-key>
-CLOUDINARY_API_SECRET=<api-secret>
-```
-
----
-
-## Environment Variables
-
-* `DATABASE_URL`: MongoDB connection string
-* `NEXTAUTH_SECRET`: Secret for NextAuth sessions
-* `NEXTAUTH_URL`: App URL for auth redirects
-* `CLOUDINARY_CLOUD_NAME`: Cloudinary account cloud name
-* `CLOUDINARY_API_KEY`: Cloudinary API key
-* `CLOUDINARY_API_SECRET`: Cloudinary API secret
-* `ADMIN_USER`: Admin login email
-* `ADMIN_PASSWORD`: Admin password
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/new-feature`)
-3. Make your changes
-4. Commit and push (`git commit -m "Add new feature" && git push`)
-5. Open a pull request
-
----
+Deploy on Vercel (or any Node host). Set all env vars in the dashboard (paste the **raw** bcrypt hash, no escaping). `yarn build` runs `prisma generate` then `next build`.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
+Personal project — all rights reserved.

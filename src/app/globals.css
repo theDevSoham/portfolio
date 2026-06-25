@@ -107,6 +107,35 @@
   color: var(--accent);
 }
 
+/* Accessible skip link — reliably hidden (clip technique), revealed only on
+ * genuine keyboard focus. Self-contained so it never depends on utility output. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip-link:focus-visible {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 300;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
 /* Frosted glass surface */
 .glass {
   background-color: color-mix(in srgb, var(--card) 55%, transparent);
@@ -146,6 +175,7 @@
   mask-composite: exclude;
   opacity: 0.5;
   transition: opacity 0.3s;
+  pointer-events: none; /* decorative border ring must not capture clicks */
 }
 .ring-gradient:hover::before {
   opacity: 1;

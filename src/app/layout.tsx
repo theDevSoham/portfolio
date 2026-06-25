@@ -36,7 +36,6 @@ export const metadata: Metadata = {
     description:
       "Full Stack Developer specializing in building scalable applications with Next.js, React, Node.js., React Native + Expo and modern web infrastructure",
     siteName: "Soham.dev",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Soham Das - Portfolio" }],
     locale: "en_US",
     type: "website",
   },
@@ -45,7 +44,6 @@ export const metadata: Metadata = {
     title: "Soham Das - Portfolio",
     description:
       "Explore projects, skills, and case studies by Soham Das — Full Stack Developer.",
-    images: ["/og-image.png"],
   },
 };
 

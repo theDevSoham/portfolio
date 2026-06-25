@@ -12,6 +12,10 @@ export default function SiteLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <SmoothScroll>
+      {/* Reliably hidden; only revealed during genuine keyboard (Tab) navigation. */}
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <EntryScreen />
       <Aurora />
       <div
@@ -21,7 +25,7 @@ export default function SiteLayout({
       <ScrollProgress />
       <PageLoader />
       <Navbar />
-      <main className="min-h-[70vh]">{children}</main>
+      <main id="main" className="min-h-[70vh]">{children}</main>
       <Footer />
       <KonamiEasterEgg />
     </SmoothScroll>
