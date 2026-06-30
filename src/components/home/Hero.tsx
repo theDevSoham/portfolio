@@ -8,16 +8,32 @@ import { useGSAP } from "@gsap/react";
 import { buttonVariants } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Container } from "@/components/ui/Container";
-
-const ROLES = ["react", "next.js", "node.js", "typescript", "react native"];
+import { Highlight } from "@/components/ui/Highlight";
+import { HOME_DEFAULTS } from "@/lib/homeDefaults";
 
 export default function Hero({
   name,
-  avatarUrl,
+  image,
+  badge,
+  headline,
+  highlight,
+  tagline,
+  roles,
 }: {
   name: string;
-  avatarUrl?: string | null;
+  image?: string | null;
+  badge?: string | null;
+  headline?: string | null;
+  highlight?: string | null;
+  tagline?: string | null;
+  roles?: string[];
 }) {
+  const ROLES = roles && roles.length ? roles : HOME_DEFAULTS.heroRoles;
+  const badgeText = badge || HOME_DEFAULTS.heroBadge;
+  const headlineText = headline || HOME_DEFAULTS.heroHeadline;
+  const highlightText = highlight || (headline ? "" : HOME_DEFAULTS.heroHighlight);
+  const taglineText = tagline || HOME_DEFAULTS.heroTagline;
+  const heroSrc = image || HOME_DEFAULTS.heroImageFallback;
   const root = useRef<HTMLElement>(null);
   const portraitRef = useRef<HTMLDivElement>(null);
   const roleRef = useRef<HTMLSpanElement>(null);
@@ -65,7 +81,7 @@ export default function Hero({
   useEffect(() => {
     const i = setInterval(() => setRole((r) => (r + 1) % ROLES.length), 2000);
     return () => clearInterval(i);
-  }, []);
+  }, [ROLES.length]);
 
   useGSAP(
     () => {
@@ -82,18 +98,15 @@ export default function Hero({
           {/* Text */}
           <div className="max-w-2xl">
             <div className="hero-el">
-              <StatusPill label="available for work" />
+              <StatusPill label={badgeText} />
             </div>
 
             <h1 className="hero-el font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[0.95] mt-6">
-              Building <span className="text-gradient">modern web</span>
-              <br />
-              experiences.
+              <Highlight text={headlineText} phrase={highlightText} />
             </h1>
 
             <p className="hero-el mt-6 text-lg text-muted-foreground max-w-xl">
-              I&rsquo;m {name || "Soham Das"} — a full-stack developer crafting fast,
-              delightful, and scalable products from pixel to deploy.
+              {taglineText}
             </p>
 
             <div className="hero-el mt-5 inline-flex items-center gap-2 rounded-lg border border-border bg-card/50 px-4 py-2 font-mono text-sm backdrop-blur-md">
@@ -129,21 +142,12 @@ export default function Hero({
               />
               {/* Frame */}
               <div className="ring-gradient relative w-64 h-80 sm:w-72 sm:h-96 rounded-[2rem] overflow-hidden border border-border bg-card/60 backdrop-blur-md">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt={name || "Soham Das"}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="/hero.png"
-                    alt={name || "Soham Das"}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heroSrc}
+                  alt={name || "Soham Das"}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
               </div>
 

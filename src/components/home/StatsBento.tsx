@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
 import { User } from "lucide-react";
 import type { AboutData } from "@/lib/data/about";
+import type { HomeData } from "@/lib/data/home";
 import Reveal from "@/components/anim/Reveal";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/Section";
 import { CountUp } from "@/components/ui/CountUp";
+import { Highlight } from "@/components/ui/Highlight";
+import { HOME_DEFAULTS } from "@/lib/homeDefaults";
 
 function Stat({ value, label }: { value: ReactNode; label: string }) {
   return (
@@ -21,24 +24,30 @@ function Stat({ value, label }: { value: ReactNode; label: string }) {
 export function StatsBento({
   about,
   projectsCount,
+  home,
+  statsImage,
 }: {
   about: AboutData | null;
   projectsCount: number;
+  home?: HomeData | null;
+  statsImage?: string | null;
 }) {
   const bio =
     about?.bio ||
     "Full-stack developer with a love for clean architecture, expressive interfaces, and shipping things that feel good to use.";
 
+  const eyebrow = home?.statsEyebrow || HOME_DEFAULTS.statsEyebrow;
+  const title = home?.statsTitle || HOME_DEFAULTS.statsTitle;
+  const highlight = home?.statsHighlight || (home?.statsTitle ? "" : HOME_DEFAULTS.statsHighlight);
+  const funValue = home?.funStatValue || HOME_DEFAULTS.funStatValue;
+  const funLabel = home?.funStatLabel || HOME_DEFAULTS.funStatLabel;
+
   return (
     <Container className="py-24">
       <Reveal>
         <SectionHeading
-          eyebrow="profile"
-          title={
-            <>
-              Who <span className="text-gradient">I am</span>
-            </>
-          }
+          eyebrow={eyebrow}
+          title={<Highlight text={title} phrase={highlight} />}
         />
       </Reveal>
 
@@ -53,10 +62,10 @@ export function StatsBento({
 
         {/* Avatar */}
         <Card className="overflow-hidden p-0 min-h-[220px] relative">
-          {about?.avatarUrl ? (
+          {statsImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={about.avatarUrl}
+              src={statsImage}
               alt={about?.name || "Avatar"}
               className="absolute inset-0 h-full w-full object-cover"
             />
@@ -72,7 +81,7 @@ export function StatsBento({
         <Stat value={<CountUp value={projectsCount} />} label="projects shipped" />
         <Stat value={<CountUp value={about?.skills.length ?? 0} />} label="technologies" />
         <Stat value={<CountUp value={about?.experiences.length ?? 0} />} label="roles held" />
-        <Stat value="∞" label="cups of coffee" />
+        <Stat value={funValue} label={funLabel} />
       </Reveal>
     </Container>
   );

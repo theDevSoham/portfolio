@@ -1,10 +1,19 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { HomeData } from "@/lib/data/home";
 import Reveal from "@/components/anim/Reveal";
 import { Container } from "@/components/ui/Container";
 import { buttonVariants } from "@/components/ui/Button";
+import { Highlight } from "@/components/ui/Highlight";
+import { HOME_DEFAULTS } from "@/lib/homeDefaults";
 
-export function ContactCTA() {
+export function ContactCTA({ home }: { home?: HomeData | null }) {
+  const eyebrow = home?.ctaEyebrow || HOME_DEFAULTS.ctaEyebrow;
+  const heading = home?.ctaHeading || HOME_DEFAULTS.ctaHeading;
+  const highlight = home?.ctaHighlight || (home?.ctaHeading ? "" : HOME_DEFAULTS.ctaHighlight);
+  const subtext = home?.ctaSubtext || HOME_DEFAULTS.ctaSubtext;
+  const button = home?.ctaButton || HOME_DEFAULTS.ctaButton;
+
   return (
     <Container className="py-24">
       <Reveal>
@@ -14,16 +23,14 @@ export function ContactCTA() {
             className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[60%] h-48 rounded-full blur-3xl opacity-30"
             style={{ background: "radial-gradient(circle, var(--primary), transparent 70%)" }}
           />
-          <p className="eyebrow text-sm">{"// let's talk"}</p>
+          <p className="eyebrow text-sm">{`// ${eyebrow}`}</p>
           <h2 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight mt-3">
-            Let&rsquo;s build something <span className="text-gradient">together</span>.
+            <Highlight text={heading} phrase={highlight} />.
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-xl mx-auto">
-            Have an idea, a role, or a project in mind? I&rsquo;m one message away.
-          </p>
+          <p className="mt-5 text-muted-foreground max-w-xl mx-auto">{subtext}</p>
           <div className="mt-9">
             <Link href="/contact" className={buttonVariants({ variant: "gradient", size: "lg" })}>
-              Start a conversation <ArrowRight size={18} />
+              {button} <ArrowRight size={18} />
             </Link>
           </div>
         </div>

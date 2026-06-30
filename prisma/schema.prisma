@@ -14,17 +14,19 @@ datasource db {
 }
 
 model Project {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  icon        String
-  slug        String         @unique
-  description String
-  tags        String[] // stored as an array in Mongo
-  repoUrl     String?
-  liveUrl     String?
-  images      ProjectImage[] // relation to images
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  icon          String
+  slug          String         @unique
+  description   String
+  tags          String[] // stored as an array in Mongo
+  repoUrl       String?
+  liveUrl       String?
+  featured      Boolean        @default(false)
+  featuredOrder Int            @default(0)
+  images        ProjectImage[] // relation to images
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model ProjectImage {
@@ -103,4 +105,33 @@ model SocialLink {
   url       String
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId String  @db.ObjectId
+}
+
+// Singleton: editable copy for the landing page.
+model Home {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Hero
+  heroBadge     String?
+  heroHeadline  String?
+  heroHighlight String? // phrase within the headline rendered as a gradient
+  heroTagline   String?
+  heroRoles     String[] // rotating terminal words
+  heroImage     String? // hero portrait (Cloudinary URL)
+  // Marquee
+  marqueeItems  String[] // tech strip (falls back to About skills)
+  // Stats section
+  statsEyebrow   String?
+  statsTitle     String?
+  statsHighlight String?
+  statsImage     String? // stats-bento avatar (Cloudinary URL)
+  funStatValue   String? // e.g. "∞"
+  funStatLabel   String?
+  // Contact CTA
+  ctaEyebrow    String?
+  ctaHeading    String?
+  ctaHighlight  String?
+  ctaSubtext    String?
+  ctaButton     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

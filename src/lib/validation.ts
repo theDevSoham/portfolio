@@ -109,6 +109,46 @@ export const projectInputSchema = z.object({
   images: z.array(z.string().url()).default([]),
 });
 
+// ---------- Home (landing page copy) ----------
+const shortList = (maxItems: number) =>
+  z.array(z.string().min(1).max(60)).max(maxItems).default([]);
+
+// Empty → null (an explicit clear), so emptying a field resets it to the
+// built-in default. (optionalText → undefined, which Prisma would IGNORE.)
+const nullableText = z.preprocess(
+  (v) => (v === "" || v === null ? null : v),
+  z.string().max(2000).nullable()
+);
+
+export const homeSchema = z.object({
+  id: z.string().optional(),
+  heroBadge: nullableText,
+  heroHeadline: nullableText,
+  heroHighlight: nullableText,
+  heroTagline: nullableText,
+  heroRoles: shortList(12),
+  heroImage: nullableText,
+  marqueeItems: shortList(40),
+  statsEyebrow: nullableText,
+  statsTitle: nullableText,
+  statsHighlight: nullableText,
+  statsImage: nullableText,
+  funStatValue: nullableText,
+  funStatLabel: nullableText,
+  ctaEyebrow: nullableText,
+  ctaHeading: nullableText,
+  ctaHighlight: nullableText,
+  ctaSubtext: nullableText,
+  ctaButton: nullableText,
+});
+
+// Toggle/reorder a project's featured state.
+export const featuredPatchSchema = z.object({
+  id: z.string().min(1),
+  featured: z.boolean().optional(),
+  featuredOrder: z.coerce.number().int().min(0).optional(),
+});
+
 // ---------- Upload ----------
 export const ALLOWED_UPLOAD_TYPES = [
   "image/png",

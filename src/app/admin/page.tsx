@@ -10,12 +10,14 @@ import {
   Trash2,
   Github,
   ExternalLink,
+  Home,
   User,
   Mail,
   LogOut,
   ArrowUpRight,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import AdminHome from "@/components/AdminHome";
 import AdminAbout from "@/components/AdminAbout";
 import AdminContact from "@/components/AdminContact";
 import { Project } from "@/lib/project";
@@ -34,9 +36,10 @@ import {
   Spinner,
 } from "@/components/admin/AdminKit";
 
-type Section = "projects" | "about" | "contact";
+type Section = "home" | "projects" | "about" | "contact";
 
 const NAV: { key: Section; label: string; icon: typeof FolderGit2 }[] = [
+  { key: "home", label: "Home", icon: Home },
   { key: "projects", label: "Projects", icon: FolderGit2 },
   { key: "about", label: "About", icon: User },
   { key: "contact", label: "Contact", icon: Mail },
@@ -55,7 +58,7 @@ const emptyForm = {
 };
 
 export default function Admin() {
-  const [activeSection, setActiveSection] = useState<Section>("projects");
+  const [activeSection, setActiveSection] = useState<Section>("home");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<ToastState>(null);
@@ -391,6 +394,7 @@ export default function Admin() {
           </div>
         )}
 
+        {activeSection === "home" && <AdminHome onToast={setToast} />}
         {activeSection === "about" && <AdminAbout onToast={setToast} />}
         {activeSection === "contact" && <AdminContact onToast={setToast} />}
       </div>

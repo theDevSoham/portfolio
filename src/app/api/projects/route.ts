@@ -3,7 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
 import { isAdmin, unauthorized } from "@/lib/auth";
-import { projectInputSchema, validateUploadFile, badRequest } from "@/lib/validation";
+import {
+  projectInputSchema,
+  validateUploadFile,
+  badRequest,
+  featuredPatchSchema,
+} from "@/lib/validation";
 
 // Utility for Cloudinary upload (validates type/size before sending)
 async function uploadToCloudinary(file: File): Promise<string> {
@@ -132,4 +137,34 @@ export async function DELETE(req: NextRequest) {
 
   await prisma.project.delete({ where: { id } });
   return NextResponse.json({ success: true });
+}
+
+// ---------------- PATCH (featured flag / order) ----------------
+export async function PATCH(req: NextRequest) {
+  if (!(await isAdmin())) return unauthorized();
+
+  const parsed = featuredPatchSchema.safeParse(await req.json());
+  if (!parsed.success) return badRequest(parsed.error);
+  const { id, featured, featuredOrder } = parsed.data;
+
+  const data: { featured?: boolean; featuredOrder?: number } = {};
+  if (featuredOrder !== undefined) data.featuredOrder = featuredOrder;
+  if (featured !== undefined) {
+    data.featured = featured;
+    // Newly featured with no explicit order → append to the end.
+    if (featured && featuredOrder === undefined) {
+      const max = await prisma.project.aggregate({
+        where: { featured: true },
+        _max: { featuredOrder: true },
+      });
+      data.featuredOrder = (max._max.featuredOrder ?? 0) + 1;
+    }
+  }
+
+  const project = await prisma.project.update({
+    where: { id },
+    data,
+    include: { images: true },
+  });
+  return NextResponse.json(project);
 }

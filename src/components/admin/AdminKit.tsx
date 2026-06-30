@@ -35,12 +35,14 @@ export function AdminModal({
   title,
   children,
   footer,
+  size = "default",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  size?: "default" | "wide";
 }) {
   useEffect(() => {
     if (!open) return;
@@ -57,7 +59,9 @@ export function AdminModal({
       onClick={onClose}
     >
       <div
-        className="modal-pop w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl"
+        className={`modal-pop w-full rounded-2xl border border-border bg-card shadow-2xl ${
+          size === "wide" ? "max-w-4xl" : "max-w-lg"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
